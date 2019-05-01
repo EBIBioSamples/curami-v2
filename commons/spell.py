@@ -17,6 +17,9 @@ def P(word, N=sum(WORDS.values())):
     return WORDS[word] / N
 
 
+def spell_check(word):
+    return word in WORDS
+
 def correction(word):
     "Most probable spelling correction for word."
     return max(candidates(word), key=P)
@@ -50,7 +53,9 @@ def edits2(word):
 
 if __name__ == "__main__":
     print(len(WORDS))
-    print(correction("helo"))
+    print(correction("id"))
+    print(spell_check("id"))
+    print(spell_check("asdfghjk"))
 
 
 

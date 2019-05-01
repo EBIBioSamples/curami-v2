@@ -17,6 +17,13 @@ error_count = 0  # todo
 max_error_count = 4  # todo
 
 
+def main(*args):
+    get_all_samples()
+    # Combine files after collecting data,
+    # This step is not necessary page size can be set to higher value if server supports it
+    # combine_files(100)
+
+
 def get_samples_count():
     response = requests.get(base_url, params={"size": 1}, timeout=request_timeout)
     total_samples = 0
@@ -82,8 +89,26 @@ def get_all_samples():
     parameter_queue.join()
 
 
-def main(*args):
-    get_all_samples()
+def combine_files(count):
+    file_list = os.listdir(file_utils.data_directory)
+    print("Found " + str(len(file_list)) + " files. Aggregating them into " + str(len(file_list) / count) + " files")
+    file_count = 0
+    sample_list = []
+    for i, file_name in enumerate(sorted(file_list)):  # for consistency we will sort, but not exactly expected order,
+        with open(file_utils.data_directory + file_name, "r") as data_file:
+            sample_sub_list = json.load(data_file)
+        if ((i + 1) % count) == 0:
+            sample_list = sample_list + sample_sub_list
+            with open(file_utils.combined_data_directory + str(file_count) + file_utils.data_extension, "w") as output:
+                output.write(json.dumps(sample_list, indent=4))
+            sample_list = []
+            file_count = file_count + 1
+        else:
+            sample_list = sample_list + sample_sub_list
+
+        if not sample_list:
+            with open(file_utils.combined_data_directory + str(file_count) + file_utils.data_extension, "w") as output:
+                output.write(json.dumps(sample_list, indent=4))
 
 
 if __name__ == '__main__':

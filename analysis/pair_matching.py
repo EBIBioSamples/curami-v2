@@ -10,8 +10,8 @@ match_ratio = 0.85
 
 
 def analyze():
-    attributes = pd.read_csv(file_utils.unique_attributes_file, encoding=file_utils.encoding)
-    columns = attributes["ATTRIBUTE"].tolist()[:100]
+    attributes = pd.read_csv(file_utils.unique_attributes_file_final, encoding=file_utils.encoding)
+    columns = attributes["ATTRIBUTE"].tolist()
     find_similar_pairs_parallel(columns)
 
 
@@ -45,7 +45,7 @@ def find_similar_pairs_parallel(attribute_list):
             job_list.append(attribute_list[i:])
 
     pd_matched_attributes = pd.DataFrame(matched_attributes)
-    pd_matched_attributes = pd_matched_attributes.sort_values(by="RATIO")
+    pd_matched_attributes = pd_matched_attributes.sort_values(by="RATIO", ascending=False)
     pd_matched_attributes.to_csv(file_utils.matched_attributes_file, index=False, encoding=file_utils.encoding)
 
 

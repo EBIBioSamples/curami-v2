@@ -10,7 +10,8 @@ def transform():
     print("Transforming data")
     from_file_no = 1
     to_file_no = 250
-    generate_attribute_value_files(from_file_no, to_file_no)
+    # generate_attribute_value_files(from_file_no, to_file_no)
+    generate_all_data_file(from_file_no, to_file_no)
 
 
 def generate_attribute_value_files(from_file_no, to_file_no):
@@ -71,7 +72,9 @@ def generate_attribute_value_files(from_file_no, to_file_no):
 def generate_all_data_file(from_file_no, to_file_no):
     # generating all data file, seems like this file is too large with lot of sparce data
     pd_unique_attributes = pd.read_csv(file_utils.unique_attributes_file)
-    columns = pd_unique_attributes["ATTRIBUTE"].tolist()
+    columns = pd_unique_attributes["ATTRIBUTE"][0:100].tolist()
+    columns_set = set(columns)
+    # data_list = []
     for i in tqdm(range(from_file_no, to_file_no + 1)):
         with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
             sample_list = json.load(data_file)
@@ -82,8 +85,10 @@ def generate_all_data_file(from_file_no, to_file_no):
 
             data_map = {"accession": sample["accession"]}
             for key, value_as_list in attribute_values.items():
-                value = value_as_list[0]["text"]
-                data_map[key] = value
+                if key in columns_set:
+                    value = value_as_list[0]["text"]
+                    # data_map[key] = value
+                    data_map[key] = int(1)
 
             data_list.append(data_map)
 
@@ -92,8 +97,19 @@ def generate_all_data_file(from_file_no, to_file_no):
             append = "w"
 
         pd_data_list = pd.DataFrame(data_list, columns=columns)
-        with open(file_utils.all_data_file, append) as output:
-            pd_data_list.to_csv(output, index=False, encoding="utf-8")
+        pd_data_list.fillna(int(0), inplace=True)
+
+        if i == from_file_no:
+            with open(file_utils.all_data_file, append) as output:
+                pd_data_list.to_csv(output, index=False, encoding="utf-8", float_format='%.0f')
+        else:
+            with open(file_utils.all_data_file, append) as output:
+                pd_data_list.to_csv(output, index=False, header=None, encoding="utf-8", float_format='%.0f')
+
+    # pd_data_list = pd.DataFrame(data_list, columns=columns).to_sparse()
+    # with open(file_utils.all_data_file, "w") as output:
+    #     pd_data_list.to_csv(output, index=False, encoding="utf-8")
+    # print(pd_data_list.head())
 
 
 if __name__ == "__main__":
