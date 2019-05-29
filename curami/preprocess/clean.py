@@ -1,11 +1,8 @@
 import pandas as pd
 import re
-from difflib import SequenceMatcher
-from tqdm import tqdm
-from multiprocessing import pool
 from nltk.corpus import words
 
-from commons import file_utils
+from curami.commons import file_utils
 
 
 first_cap_re = re.compile('(.)([A-Z][a-z]+)')

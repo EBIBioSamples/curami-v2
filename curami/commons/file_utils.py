@@ -1,16 +1,10 @@
 import json
 import os
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
 
-import commons.set_encoder as set_encoder
-
-
-data_directory = "../data/raw/"
-combined_data_directory = "../data/combined/"
-intermediate_data_directory = "../data/intermediate/"
-results_directory = "../data/results/"
+data_directory = "../../data/raw/"
+combined_data_directory = "../../data/combined/"
+intermediate_data_directory = "../../data/intermediate/"
+results_directory = "../../data/results/"
 intermediate_simple_directory = intermediate_data_directory + "simple/"
 intermediate_underscore_directory = intermediate_data_directory + "underscore/"
 intermediate_non_word_directory = intermediate_data_directory + "non_word/"

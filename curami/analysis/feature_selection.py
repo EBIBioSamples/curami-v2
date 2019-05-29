@@ -1,11 +1,10 @@
-import json
 import sys
 
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
-from commons import file_utils
+import file_utils
 
 # Principal component analysis(PCA) ,
 # Independent component analysis (ICA) ,

@@ -3,7 +3,7 @@ from difflib import SequenceMatcher
 from tqdm import tqdm
 from multiprocessing import pool
 
-from commons import file_utils
+from curami.commons import file_utils
 
 
 match_ratio = 0.85

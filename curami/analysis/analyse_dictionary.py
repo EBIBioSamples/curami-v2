@@ -1,7 +1,5 @@
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
-import commons.file_utils as file_utils
-import commons.utils as curami_utils
+from curami import commons as file_utils
 import json
 
 

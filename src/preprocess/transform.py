@@ -2,8 +2,8 @@ import json
 import pandas as pd
 from tqdm import tqdm
 
-import commons.file_utils as file_utils
-import commons.set_encoder as set_encoder
+from src import commons as file_utils
+import set_encoder as set_encoder
 
 
 def transform():

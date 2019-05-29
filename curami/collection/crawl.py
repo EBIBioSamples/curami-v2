@@ -4,7 +4,7 @@ import json
 import queue
 import threading
 import requests
-from src import commons as utils, commons as file_utils
+from curami import commons as utils, commons as file_utils
 
 base_url = "http://wwwdev.ebi.ac.uk/biosamples/samples"
 thread_count = 4

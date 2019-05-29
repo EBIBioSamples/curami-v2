@@ -1,12 +1,15 @@
 import json
 import sys
 
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from commons import file_utils
+# import sys
+# sys.path.append("/home/isuru/Projects/curami-v2")
+# export PYTHONPATH=/home/isuru/Projects/curami-v2
+
+from curami.commons import file_utils
 
 sample_count_string = "total samples"
 av_count_string = "total attributes"

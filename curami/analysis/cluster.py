@@ -1,13 +1,11 @@
-import json
 import sys
 import seaborn as sns
 
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
 
-from commons import file_utils
+from curami.commons import file_utils
 
 sample_count_string = "total samples"
 av_count_string = "total attributes"
