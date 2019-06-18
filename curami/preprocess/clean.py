@@ -3,6 +3,7 @@ import re
 from nltk.corpus import words
 
 from curami.commons import file_utils
+from curami.commons import word_processor
 
 
 first_cap_re = re.compile('(.)([A-Z][a-z]+)')
@@ -168,7 +169,13 @@ def convert_attributes_remove_non_word_characters():
     pd_case_matched_attributes.to_csv(file_utils.unique_attributes_file_non_word_diff, index=False, header=False, encoding=file_utils.encoding)
 
 
+
 def compare_cleanup_process():
+    # this method is too complicated, need to make it less complicated
+    # Compare between two preprocessed set of attributes and select best attributes.
+    # 1. If there are common attributes select them
+    # 2. If there are dissimilar attributes select them based on dictionary or existence
+
     pd_attr_1 = pd.read_csv(file_utils.unique_attributes_file_simple, encoding=file_utils.encoding)
     pd_attr_2 = pd.read_csv(file_utils.unique_attributes_file_underscore, encoding=file_utils.encoding)
     pd_attr_diff_1 = pd.read_csv(file_utils.unique_attributes_file_simple_diff_all, header=None, encoding=file_utils.encoding)
@@ -177,6 +184,7 @@ def compare_cleanup_process():
     attr1_set = set(pd_attr_1["ATTRIBUTE"])
     attr2_set = set(pd_attr_2["ATTRIBUTE"])
 
+    # create data structures to make processing easier
     attr1_diff_map = {}
     attr2_diff_map = {}
     for index, row in pd_attr_diff_1.iterrows():
@@ -201,12 +209,14 @@ def compare_cleanup_process():
     clean_attributes_conversions = {}
     clean_attribute_set = attr1_set.intersection(attr2_set)
 
+    # put common attributes in the both set to final list
     for attribute in clean_attribute_set:
         original_attribute_set1 = attr1_diff_map[attribute]
         original_attribute_set2 = attr2_diff_map[attribute]
         original_attributes = set(original_attribute_set1).union(set(original_attribute_set2))
         clean_attributes_conversions[attribute] = original_attributes
 
+    # get attributes in one set and not in other, create map with key=original attribute
     reconcile_map = {}
     for val in attr1_set:
         if val not in attr2_set:
@@ -225,6 +235,9 @@ def compare_cleanup_process():
                     reconcile_map[original_att] = [val]
                 # print(val + " : " + str(original_att_set) + " : " + attribute1_to_conversion_map[original_att])
 
+    # If len=1 then value is only present in one attribute set.
+    # That mean it has converged with different attribute in other set
+    # If len=2 this attribute has no converged values, select either of the attributes based on a dictionary test
     for key, val in reconcile_map.items():
         if len(val) == 1:
             first_value = attribute1_to_conversion_map[key]
@@ -309,55 +322,5 @@ def compare_cleanup_process():
 
 
 if __name__ == "__main__":
-    preprocess()
+    # preprocess()
     compare_cleanup_process()
-    # value = "\"\"\"hello\"\"\""
-    # print("hello")
-    # print(value)
-    # print(re.compile(r'(\"+)(.+?)(\"+)').sub(r'\2', value))
-    # print(re.sub(r'"""', "", value))
-
-    # attribute_frequency_pd = pd.read_csv(file_utils.unique_attributes_file, encoding=file_utils.encoding)
-    # attribute_frequency_map = {}
-    # for index, row in attribute_frequency_pd.iterrows():
-    #     attribute_frequency_map[row["ATTRIBUTE"]] = row["COUNT"]
-    # print(attribute_frequency_map["organism"])
-
-    # print("treatment" in words.words())
-    # print("id" in words.words())
-    # print("pub" in words.words())
-    # print("med" in words.words())
-
-    # print(re.sub(r'^[-\']', '', "-Disease-de"))
-    # print(re.sub(r'^[-\']', '', "-Disease-de"))
-    # print(re.sub(r'^[-\']', '', "\'HELLNo-oi\'"))
-    # print(re.sub(r'[^[\-\']', '', "\'HELLNo"))
-
-
-    # first_cap_re = re.compile('(.)([A-Z][a-z]+)')
-    # all_cap_re = re.compile('([a-z0-9])([A-Z])')
-    #
-    # def convert(name):
-    #     s1 = first_cap_re.sub(r'\1_\2', name)
-    #     return all_cap_re.sub(r'\1_\2', s1).lower()
-    #
-    #
-    # remove_space = re.compile('')
-    #
-    # string_to_check = "geographic location ( latitude )"
-    # print(re.sub("\( ", "(", string_to_check))
-    # print(re.sub(" \)", ")", string_to_check))
-    #
-    # print(convert("geographic location (latitude),Geographic location (latitude),Geographic location (Latitude)"))
-    # print(convert("geographic location (latitude))"))
-    # print(convert("Geographic location (latitude)"))
-    # print(convert("Geographic location (Latitude)"))
-    # print(convert(" Pcr Primers"))
-    # print(convert("hello_Worlld"))
-    # print(convert("hello__Worlld"))
-    # print(convert("hello_Worl_ld"))
-    # print(convert("hello Worlld"))
-    # print(convert("helloWor lld"))
-    # print(convert("helloWorlld123"))
-    # print(convert("helloW2or lld"))
-    # print(convert("helloWWWor lld"))

@@ -4,16 +4,19 @@ import json
 import queue
 import threading
 import requests
-from curami import commons as utils, commons as file_utils
+from curami.commons import utils, file_utils
 
-base_url = "http://wwwdev.ebi.ac.uk/biosamples/samples"
-thread_count = 4
+# base_url = "http://wwwdev.ebi.ac.uk/biosamples/samples"
+base_url = "http://wp-p2m-40:8081/biosamples/samples"
+thread_count = 2
 page_size = 100
 request_timeout = 50
 parameter_queue = queue.Queue()
 total_records = 0
 error_count = 0  # todo
 max_error_count = 4  # todo
+
+continue_from_page = 8733
 
 
 def main(*args):
@@ -55,10 +58,11 @@ def worker_thread():
         try:
             retrieve_and_save_records(params)
         except requests.exceptions.ReadTimeout:
-            print("Failed to get the page within the given timeout. Retrying....")
+            print("Failed to get the page: " + str(params["page"]) + " within the given timeout. Retrying....")
             parameter_queue.put(params)
         except requests.exceptions.HTTPError as error:
-            print("Internal server error (mostly because of slow server). Retrying....")
+            print("Internal server error, page: " +
+                  str(params["page"]) + " (mostly because of slow server). Retrying....")
             parameter_queue.put(params)
         else:
             parameter_queue.task_done()
@@ -77,8 +81,8 @@ def get_all_samples():
     total_records = get_samples_count()
     no_of_pages = total_records // page_size + 1
     print("Collecting " + str(total_records) + " samples using " + str(no_of_pages) + " http requests")
-    for i in range(25374, no_of_pages):
-        parameter_queue.put({"size": page_size, "page": i})
+    for i in range(continue_from_page, no_of_pages):  # page counting here
+        parameter_queue.put({"size": page_size, "page": i})  # , "url": base_urls[i % len(base_urls)]
 
     for i in range(thread_count):
         thread = threading.Thread(target=worker_thread)
@@ -113,6 +117,6 @@ def combine_files(count):
 if __name__ == '__main__':
     main(*sys.argv[1:])
 
-
 # get_all_samples()
 # Percentage = 76%, total completed requests = 19376
+# Percentage = 8%, total completed requests = 8733

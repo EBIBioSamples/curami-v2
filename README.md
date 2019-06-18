@@ -100,3 +100,25 @@ We have attribute and its related values. Our main goal is to minimise number of
 * Having an attribute and values dictionary
 * Identify submitter, feedback about the errors, require changes ??
 * Can we identify metrics
+
+
+### Clustering
+We have 40,000 different attributes. With 40k attributes clustering become almost impossible.
+
+Dimensionality reduction is one popular technique to remove noisy (i.e. irrelevant) and
+redundant attributes (AKA features). Dimensionality reduction techniques can be categorized mainly into feature extraction and feature selection. In feature extraction approach,
+features are projected into a new space with lower dimensionality. Examples of feature
+extraction technique include Principle Component Analysis (PCA), Linear Discriminant
+Analysis (LDA), Singular Value Decomposition (SVD), to name a few. On the other hand,
+the feature selection approach aims to select a small subset of features that minimize redundancy and maximize relevance to the target (i.e. class label). Popular feature selection
+techniques include: Information Gain, Relief, Chi Squares, Fisher Score, and Lasso, to name
+a few
+
+
+
+
+
+source venv/bin/activate
+pip3 freeze > requirements.txt
+pip3 install -r requirements.txt
+python3 setup.py sdist

@@ -2,16 +2,17 @@ import json
 import pandas as pd
 from tqdm import tqdm
 
-from curami import commons as file_utils
-import set_encoder as set_encoder
+from curami.commons import file_utils
+from curami.commons import set_encoder
 
 
 def transform():
     print("Transforming data")
     from_file_no = 1
-    to_file_no = 250
-    # generate_attribute_value_files(from_file_no, to_file_no)
-    generate_all_data_file(from_file_no, to_file_no)
+    to_file_no = 106  # inclusive
+    generate_attribute_value_files(from_file_no, to_file_no)
+    # generate_all_data_file(from_file_no, to_file_no)  # this file is too big, difficult to process
+    # generate_coexistance_file(from_file_no, to_file_no)
 
 
 def generate_attribute_value_files(from_file_no, to_file_no):
@@ -31,15 +32,15 @@ def generate_attribute_value_files(from_file_no, to_file_no):
             for key, value_as_list in attribute_values.items():
                 value = value_as_list[0]["text"]
 
-                if key in unique_attributes:
-                    unique_attributes[key] = unique_attributes[key] + 1
-                else:
-                    unique_attributes[key] = 1
+                # if key in unique_attributes:
+                #     unique_attributes[key] = unique_attributes[key] + 1
+                # else:
+                #     unique_attributes[key] = 1
 
-                if value in unique_values:
-                    unique_values[value] = unique_values[value] + 1
-                else:
-                    unique_values[value] = 1
+                # if value in unique_values:
+                #     unique_values[value] = unique_values[value] + 1
+                # else:
+                #     unique_values[value] = 1
 
                 if key in attribute_values_map:
                     attribute_values_map[key].add(value)
@@ -47,26 +48,26 @@ def generate_attribute_value_files(from_file_no, to_file_no):
                     attribute_values_map[key] = {value}
 
     print("Writing to files")
-    pd_unique_attributes = pd.DataFrame(
-        list(sorted(unique_attributes.items(), key=lambda kv: kv[1], reverse=True)), columns=["ATTRIBUTE", "COUNT"])
-    pd_unique_attributes.to_csv(file_utils.unique_attributes_file, index=False, encoding="utf-8")
-
-    pd_unique_values = pd.DataFrame(
-        list(sorted(unique_values.items(), key=lambda kv: kv[1], reverse=True)), columns=["VALUE", "COUNT"])
-    pd_unique_values.to_csv(file_utils.unique_values_file, index=False, encoding="utf-8")
+    # pd_unique_attributes = pd.DataFrame(
+    #     list(sorted(unique_attributes.items(), key=lambda kv: kv[1], reverse=True)), columns=["ATTRIBUTE", "COUNT"])
+    # pd_unique_attributes.to_csv(file_utils.unique_attributes_file, index=False, encoding="utf-8")
+    #
+    # pd_unique_values = pd.DataFrame(
+    #     list(sorted(unique_values.items(), key=lambda kv: kv[1], reverse=True)), columns=["VALUE", "COUNT"])
+    # pd_unique_values.to_csv(file_utils.unique_values_file, index=False, encoding="utf-8")
 
     with open(file_utils.attribute_values_file, "w") as output:
         output.write(json.dumps(attribute_values_map, indent=4, cls=set_encoder.SetEncoder))
 
     # generate summary and write to file
     print("Writing summary to file")
-    summary = dict()
-    summary["total samples"] = total_samples
-    summary["total attributes"] = sum(unique_attributes.values())
-    summary["unique attribute count"] = len(unique_attributes)
-    summary["unique value count"] = len(unique_values)
-    with open(file_utils.summary_file, "w") as output:
-        output.write(json.dumps(summary, indent=4))
+    # summary = dict()
+    # summary["total samples"] = total_samples
+    # summary["total attributes-value count"] = sum(unique_attributes.values())
+    # summary["unique attribute count"] = len(unique_attributes)
+    # summary["unique value count"] = len(unique_values)
+    # with open(file_utils.summary_file, "w") as output:
+    #     output.write(json.dumps(summary, indent=4))
 
 
 def generate_all_data_file(from_file_no, to_file_no):
@@ -112,33 +113,42 @@ def generate_all_data_file(from_file_no, to_file_no):
     # print(pd_data_list.head())
 
 
+def generate_coexistance_file(from_file_no, to_file_no):
+    print("Generating coexistance file in " + file_utils.intermediate_data_directory)
+
+    coexistance_map = {}
+
+    for i in tqdm(range(from_file_no, to_file_no + 1)):
+        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+            sample_list = json.load(data_file)
+
+        for sample in sample_list:
+            attribute_values = sample["characteristics"]
+            sample_attribute_list = list(attribute_values.keys())
+
+            for i, outer_attribute in enumerate(sample_attribute_list):
+                for inner_attribute in sample_attribute_list[i + 1:]:
+                    attribute1 = outer_attribute
+                    attribute2 = inner_attribute
+
+                    if outer_attribute > inner_attribute:
+                        attribute1 = inner_attribute
+                        attribute2 = outer_attribute
+
+                    combined_key = attribute1 + "~" + attribute2
+
+                    if combined_key not in coexistance_map:
+                        coexistance_map[combined_key] = {"ATTRIBUTE_1": attribute1, "ATTRIBUTE_2": attribute2,
+                                                         "COUNT": 0}
+
+                    coexistance_map[combined_key]["COUNT"] = coexistance_map[combined_key]["COUNT"] + 1
+
+    print("Writing to filesystem")
+    pd_unique_attributes = pd.DataFrame(
+        list(sorted(coexistance_map.values(), key=lambda kv: kv["COUNT"], reverse=True)),
+        columns=["ATTRIBUTE_1", "ATTRIBUTE_2", "COUNT"])
+    pd_unique_attributes.to_csv(file_utils.coexistance_file, index=False, encoding="utf-8")
+
+
 if __name__ == "__main__":
     transform()
-    # a = {"a": "1", "b": "2"}
-    # b = {"b": "3", "c": "4"}
-    # c = {"d": "5", "e": "6", "f": "6"}
-    # d = {"a": "5", "e": "6", "g": "6"}
-    #
-    #
-    # c1 = {"a": "5", "b": "2", "c": "3"}
-    #
-    # list1 = list(c1.items())
-    # data_frame = pd.DataFrame(list1, columns=["x", "y"])
-    # columns = data_frame["x"].tolist()
-    #
-    # with open("../data/test.text", "a") as out:
-    #     l = [d]
-    #     pd_1 = pd.DataFrame(l, columns=["a", "b", "c", "d", "e", "f", "g"])
-    #     pd_1.to_csv(out, index=False, encoding="utf-8")
-    #
-    # with open("../data/test.text", "w") as out:
-    #     l = [c]
-    #     pd_1 = pd.DataFrame(l, columns=["a", "b", "c", "d", "e", "f"])
-    #     pd_1.to_csv(out, index=False, encoding="utf-8")
-    #
-    # with open("../data/test.text", "a") as out:
-    #     l = [a]
-    #     pd_1 = pd.DataFrame(l, columns=["a", "b", "c", "d", "e", "f"])
-    #     pd_1.to_csv(out, header=False, index=False, encoding="utf-8")
-
-

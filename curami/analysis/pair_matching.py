@@ -52,7 +52,7 @@ def find_similar_pairs_parallel(attribute_list):
 def compare(attribute_list):
     matched_attributes = []
     for att in attribute_list[1:]:
-        ratio = SequenceMatcher(None, attribute_list[0], att).ratio()
+        ratio = SequenceMatcher(None, str(attribute_list[0]), str(att)).ratio()
         if ratio >= match_ratio:
             matched_entry = {"ATTRIBUTE_1": attribute_list[0], "ATTRIBUTE_2": att, "RATIO": ratio}
             matched_attributes.append(matched_entry)

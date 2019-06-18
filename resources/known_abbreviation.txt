@@ -75,7 +75,8 @@ DoS
 Dry-Lab
 DSEasy
 e-PTW
-EBI or EMBL-EBI
+EBI
+EMBL-EBI
 EBiSC
 EC
 EC-PDB
