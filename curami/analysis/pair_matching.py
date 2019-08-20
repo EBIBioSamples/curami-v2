@@ -61,4 +61,19 @@ def compare(attribute_list):
 
 
 if __name__ == "__main__":
-    analyze()
+    # analyze()
+    a = 'hello how are you'
+    b = 'hello are yo doing'
+    s = SequenceMatcher(None, a, b)
+
+    result_a = ''
+    
+    result_b = ''
+    previous_block = None
+    for block in s.get_matching_blocks():
+        if previous_block is not None:
+            result_a = result_a + "<br>" +  a[previous_block[0]+previous_block[2]:block[0]] + "<br>"
+        result_a = result_a + (a[block[0]:block[0]+block[2]])
+        previous_block = block
+        # print(block)
+    print(result_a)

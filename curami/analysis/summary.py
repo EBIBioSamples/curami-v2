@@ -42,8 +42,8 @@ def plot_attribute_count_bar_all_steps():
     sns.set(style="whitegrid")
 
     pd_unique_attributes = pd.read_csv(file_utils.unique_attributes_file, encoding="utf-8")
-    pd_unique_attributes_simple = pd.read_csv(file_utils.unique_attributes_file_simple, encoding="utf-8")
-    pd_unique_attributes_underscore = pd.read_csv(file_utils.unique_attributes_file_underscore, encoding="utf-8")
+    pd_unique_attributes_simple = pd.read_csv(file_utils.unique_attributes_file_final + '.camel=False', encoding="utf-8")
+    pd_unique_attributes_underscore = pd.read_csv(file_utils.unique_attributes_file_final + '.camel=True', encoding="utf-8")
     pd_unique_attributes_clean = pd.read_csv(file_utils.unique_attributes_file_final, encoding="utf-8")
 
     fig, ax = plt.subplots(4, 1, figsize=(15, 16))

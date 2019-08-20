@@ -7,7 +7,6 @@ intermediate_data_directory = "../../data/intermediate/"
 results_directory = "../../data/results/"
 intermediate_simple_directory = intermediate_data_directory + "simple/"
 intermediate_underscore_directory = intermediate_data_directory + "underscore/"
-intermediate_non_word_directory = intermediate_data_directory + "non_word/"
 intermediate_clean_directory = intermediate_data_directory + "clean/"
 data_extension = ".txt"
 
@@ -16,24 +15,21 @@ unique_attributes_file = intermediate_data_directory + "unique_attributes.csv"
 unique_values_file = intermediate_data_directory + "unique_values.csv"
 attribute_values_file = intermediate_data_directory + "attribute_values.json"
 summary_file = intermediate_data_directory + "summary.txt"
-coexistance_file = intermediate_data_directory + "coexistance.csv"
-
-unique_attributes_file_simple = intermediate_simple_directory + "unique_attributes.csv"
-unique_attributes_file_simple_diff = intermediate_simple_directory + "unique_attributes_diff.csv"
-unique_attributes_file_simple_diff_all = intermediate_simple_directory + "unique_attributes_diff_all.csv"
-unique_attributes_file_underscore = intermediate_underscore_directory + "unique_attributes.csv"
-unique_attributes_file_underscore_diff = intermediate_underscore_directory + "unique_attributes_diff.csv"
-unique_attributes_file_underscore_diff_all = intermediate_underscore_directory + "unique_attributes_diff_all.csv"
-unique_attributes_file_non_word = intermediate_non_word_directory + "unique_attributes.csv"
-unique_attributes_file_non_word_diff = intermediate_non_word_directory + "unique_attributes_diff.csv"
+coexistence_file = intermediate_data_directory + "coexistence.csv"
 
 unique_attributes_file_final = intermediate_clean_directory + "unique_attributes.csv"
 unique_attributes_file_final_diff = intermediate_clean_directory + "unique_attributes_diff.csv"
 unique_attributes_file_final_diff_all = intermediate_clean_directory + "unique_attributes_diff_all.csv"
+coexistence_file_final = intermediate_clean_directory + "coexistence.csv"
 
 matched_attributes_file = intermediate_data_directory + "matched_attributes.csv"
 
 dictionary_matched_attribute_file = results_directory + "dictionary_matched.csv"
+coexistence_probability_file = results_directory + "coexistence_probability.csv"
+curation_rules_file = results_directory + "curation_rules.csv"
+clustered_samples_file = results_directory + "clustered_samples.csv"
+
+gephi_network_file = results_directory + "coexistence_network.gexf"
 
 encoding = "utf-8"
 
@@ -54,9 +50,6 @@ def create_data_directory():
     if not os.path.exists(intermediate_underscore_directory):
         os.makedirs(intermediate_underscore_directory)
         os.makedirs(intermediate_simple_directory)
-
-    if not os.path.exists(intermediate_non_word_directory):
-        os.makedirs(intermediate_non_word_directory)
 
     if not os.path.exists(intermediate_clean_directory):
         os.makedirs(intermediate_clean_directory)

@@ -9,7 +9,7 @@ Taken from http://norvig.com/spell-correct.html
 def words(text): return re.findall(r'\w+', text.lower())
 
 
-WORDS = Counter(words(open('../resources/big.txt').read()))
+WORDS = Counter(words(open('../../resources/big.txt').read()))
 
 
 def P(word, N=sum(WORDS.values())):

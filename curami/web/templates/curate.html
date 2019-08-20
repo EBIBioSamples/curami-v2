@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-lg-4"></div>
+    <div class="col-lg-4">
+        <nav aria-label="curation-pages">
+            <ul class="pagination justify-content-center">
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('curation.get_curations', page=page-1, size=size) }}"
+                       tabindex="-1">Previous</a>
+                </li>
+                <!--<li class="page-item">-->
+                    <!--<a class="page-link" href="{{ url_for('curation.get_curations', page=page-1, size=size) }}">-->
+                        <!--{{ page - 1 }}-->
+                    <!--</a>-->
+                <!--</li>-->
+                <li class="page-item active">
+                    <a class="page-link" href="{{ url_for('curation.get_curations', page=page, size=size) }}">
+                        <b>{{ page }}</b> [{{ (page - 1) * size + 1 }}-{{ page * size }}]
+                        <span class="sr-only">(current)</span></a>
+                </li>
+                <!--<li class="page-item">-->
+                    <!--<a class="page-link" href="{{ url_for('curation.get_curations', page=page+1, size=size) }}">-->
+                        <!--{{ page + 1 }}</a>-->
+                <!--</li>-->
+                <!--<li class="page-item disabled">-->
+                    <!--<a class="page-link" href="#">..</a>-->
+                <!--</li>-->
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('curation.get_curations', page=page+1, size=size) }}">
+                        &nbsp;&nbsp;Next&nbsp;&nbsp;</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <div class="col-lg-2"></div>
+    <div class="col-lg-2">
+        <select class="custom-select">
+            <option value="1">Detailed View</option>
+            <option selected value="2">Compact View</option>
+        </select>
+    </div>
+</div>
+
+
+<div class="container-fluid">
+    {% for curation in curations %}
+    <div class="curate-container row">
+        <div id="{{ 'attribute_1_' + loop.index|string }}" class="attribute-container col-lg-3 badge"
+             onclick="select_curation_object(this.id, '{{ loop.index|string }}')">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">
+                        <input id="{{ 'radio_attribute_1_' + loop.index|string }}" type="radio"
+                               aria-label="Radio button for following text input"
+                               name="{{ 'selectedCuration_' + loop.index|string }}"
+                               value="{{ 'input_radio_attribute_1_' + loop.index|string }}">
+                    </div>
+                </div>
+                <input id="{{ 'input_radio_attribute_1_' + loop.index|string }}" type="text" class="form-control"
+                       aria-label="Text input with radio button"
+                       value="{{ curation.attribute_1.name }}" readonly>
+            </div>
+        </div>
+        <div id="{{ 'attribute_2_' + loop.index|string }}" class="attribute-container col-lg-3 badge"
+             onclick="select_curation_object(this.id, '{{ loop.index|string }}')">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">
+                        <input id="{{ 'radio_attribute_2_' + loop.index|string }}" type="radio"
+                               aria-label="Radio button for following text input"
+                               name="{{ 'selectedCuration_' + loop.index|string }}"
+                               value="{{ 'input_radio_attribute_2_' + loop.index|string }}">
+                    </div>
+                </div>
+                <input id="{{ 'input_radio_attribute_2_' + loop.index|string }}" type="text" class="form-control"
+                       aria-label="Text input with radio button"
+                       value="{{ curation.attribute_2.name }}" readonly>
+            </div>
+
+        </div>
+        <div id="{{ 'attribute_3_' + loop.index|string }}" class="attribute-container col-lg-4 badge"
+             onclick="select_curation_object(this.id, '{{ loop.index|string }}')">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">
+                        <input id="{{ 'radio_attribute_3_' + loop.index|string }}" type="radio"
+                               aria-label="Radio button for following text input"
+                               name="{{ 'selectedCuration_' + loop.index|string }}"
+                               value="{{ 'input_radio_attribute_3_' + loop.index|string }}">
+                    </div>
+                </div>
+                <input id="{{ 'input_radio_attribute_3_' + loop.index|string }}" type="text" class="form-control"
+                       aria-label="Text input with radio button"
+                       {% if curation.attribute_curated !=None %}
+                       value="{{ curation.attribute_curated }}"
+                       {% endif %}
+                >
+            </div>
+        </div>
+        <div id="{{ 'attribute_4_' + loop.index|string }}" class="attribute-container col-lg-2 badge">
+            <button id="{{ 'attr_input_4_' + loop.index|string }}" type="button" class="btn btn-outline-success"
+                    onclick="submit_curation_success('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', this.id, 'selectedCuration_' + '{{ loop.index|string }}', '{{ loop.index|string }}')">
+                <span class="glyphicon glyphicon-ok"></span> Curate
+            </button>
+            <button id="{{ 'attr_input_5_' + loop.index|string }}" type="button" class="btn btn-outline-danger"
+                    onclick="submit_curation_reject('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">
+                <span class="glyphicon glyphicon-remove"></span> Reject
+            </button>
+            <button id="{{ 'attr_input_6_' + loop.index|string }}" type="button" class="btn btn-outline-warning"
+                    onclick="submit_curation_ignore('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">
+                <span class="glyphicon glyphicon-remove"></span> Ignore
+            </button>
+        </div>
+    </div>
+
+    <script>
+        style_persisted_curation('{{ curation.type }}', '{{ loop.index|string }}', '{{ curation.attribute_curated }}')
+    </script>
+
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+
+{% block script_block %}
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>-->
+<script>
+    // highlight($("#attribute-1"), $("#attribute-2"));
+    //
+    // function highlight(newElem, oldElem) {
+    //     var oldText = oldElem.text(),
+    //         text = '';
+    //     newElem.text().split('').forEach(function (val, i) {
+    //         if (val != oldText.charAt(i))
+    //             text += "<span class='highlight'>" + val + "</span>";
+    //         else
+    //             text += val;
+    //     });
+    //     newElem.html(text);
+    // }
+
+    function style_curation(elementId) {
+        idName = '#' + elementId;
+        $(idName).addClass('badge-success');
+    }
+
+    function select_curation_object(elementId, index) {
+        idName = '#' + elementId;
+        // $(idName).addClass('badge-success');
+        radioName = '#radio_' + elementId;
+        $(radioName).prop("checked", true);
+    }
+
+    function submit_curation_success(attribute_1, attribute_2, elementId, radioName, index) {
+        var inputId = $("input:radio[name=" + radioName + "]:checked").val();
+        if (typeof inputId == 'undefined') {
+            alert("Please select one attribute for curation");
+            return;
+        }
+
+        var attribute_curated = $('#' + inputId).val();
+
+        $.ajax({
+            url: "/curations",
+            type: "POST",
+            data: JSON.stringify({
+                attribute_1: {name: attribute_1},
+                attribute_2: {name: attribute_2},
+                attribute_curated: attribute_curated,
+                type: 'SAME_AS'
+            }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function () {
+                style_persisted_curation('SAME_AS', index, attribute_curated);
+            },
+            error: function (request, status, error) {
+                alert("Something went wrong." + status + " " + error)
+            }
+        });
+    }
+
+    function submit_curation_reject(attribute_1, attribute_2, index) {
+        $.ajax({
+            url: "/curations",
+            type: "POST",
+            data: JSON.stringify({
+                attribute_1: {name: attribute_1},
+                attribute_2: {name: attribute_2},
+                attribute_curated: '',
+                type: 'DIFFERENT_FROM'
+            }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function () {
+                style_persisted_curation('DIFFERENT_FROM', index, '');
+            },
+            error: function (request, status, error) {
+                alert("Something went wrong." + status + " " + error)
+            }
+        });
+    }
+
+    function submit_curation_ignore(attribute_1, attribute_2, index) {
+        $.ajax({
+            url: "/curations",
+            type: "POST",
+            data: JSON.stringify({
+                attribute_1: {name: attribute_1},
+                attribute_2: {name: attribute_2},
+                attribute_curated: '',
+                type: 'DIFFICULT_TO_SAY'
+            }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function () {
+                style_persisted_curation('DIFFICULT_TO_SAY', index, '');
+            },
+            error: function (request, status, error) {
+                alert("Something went wrong." + status + " " + error)
+            }
+        });
+    }
+
+
+    function style_persisted_curation(curationType, loopIndex, curatedAttribute) {
+        if ("SAME_AS" === curationType) {
+            $('#input_radio_attribute_1_' + loopIndex).css({"background-color": ""});
+            $('#input_radio_attribute_2_' + loopIndex).css({"background-color": ""});
+            $('#input_radio_attribute_3_' + loopIndex).css({"background-color": ""});
+
+            if ($('#input_radio_attribute_1_' + loopIndex).val() === curatedAttribute) {
+                curationIndex = 1
+            } else if ($('#input_radio_attribute_2_' + loopIndex).val() === curatedAttribute) {
+                curationIndex = 2
+            } else {
+                curationIndex = 3
+            }
+
+            $('#input_radio_attribute_' + curationIndex + '_' + loopIndex).css({"background-color": "#8ad48a"});
+        } else if ("DIFFERENT_FROM" === curationType) {
+            $('#input_radio_attribute_1_' + loopIndex).css({"background-color": "#efb9b9"});
+            $('#input_radio_attribute_2_' + loopIndex).css({"background-color": "#efb9b9"});
+            $('#input_radio_attribute_3_' + loopIndex).css({"background-color": "#efb9b9"});
+        } else if ("DIFFICULT_TO_SAY" === curationType) {
+            $('#input_radio_attribute_1_' + loopIndex).css({"background-color": "#ecde90"});
+            $('#input_radio_attribute_2_' + loopIndex).css({"background-color": "#ecde90"});
+            $('#input_radio_attribute_3_' + loopIndex).css({"background-color": "#ecde90"});
+        }
+
+    }
+</script>
+
+{% endblock %}

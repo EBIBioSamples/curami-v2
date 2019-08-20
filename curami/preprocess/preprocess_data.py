@@ -8,8 +8,8 @@ import select
 
 def main(*args):
     print("Preprocessing data")
-    clean.clean()
-    transform.transform()
+    transform.preprocess()
+    clean.preprocess()
     integrate.integrate()
     select.select()
 

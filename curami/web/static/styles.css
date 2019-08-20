@@ -1,0 +1,20 @@
+.navigation-bar {
+    border: 1px solid #999999;
+    /*background-color: #254b8b;*/
+    /*flex-grow: 1;*/
+}
+
+.attribute-container {
+    /*border: 1px solid black;*/
+    /*flex-grow: 1;*/
+}
+
+.curate-container {
+    /*display: flex;*/
+}
+
+#attribute-1 {
+
+}
+
+.highlight {background-color: #B4D5FF}

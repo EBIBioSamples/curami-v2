@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% if title %}
+    <title>{{ title }} - Curation Interface</title>
+    {% else %}
+    <title>Curation Interface</title>
+    {% endif %}
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.css') }}">
+    <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/popper.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
+
+    <script>
+        $(document).ready(function () {
+            if ('{{ self._TemplateReference__context.name }}' === 'curate.html') {
+                $('#nav-item-curate').addClass('active')
+            } else if ('{{ self._TemplateReference__context.name }}' === 'login.html') {
+                $('#nav-item-login').addClass('active')
+            } else if ('{{ self._TemplateReference__context.name }}' === 'index.html') {
+                $('#nav-item-home').addClass('active')
+            } else if ('{{ self._TemplateReference__context.name }}' === 'profile.html') {
+                $('#nav-item-profile').addClass('active')
+            } else if ('{{ self._TemplateReference__context.name }}' === 'summary.html') {
+                $('#nav-item-summary').addClass('active')
+            }
+        });
+
+    </script>
+
+    {% block script_block %}{% endblock %}
+</head>
+<body>
+<div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03"
+                aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <a class="navbar-brand" href="#">CURAMI</a>
+
+        <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+            <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                <li id="nav-item-home" class="nav-item">
+                    <a class="nav-link" href="{{ url_for('curation.index') }}">Home</a>
+                </li>
+                <li id="nav-item-profile" class="nav-item">
+                    <a class="nav-link" href="{{ url_for('curation.user_summary') }}">Profile</a>
+                </li>
+                <li id="nav-item-summary" class="nav-item">
+                    <a class="nav-link" href="{{ url_for('curation.show_summary') }}">Summary</a>
+                </li>
+                <li id="nav-item-curate" class="nav-item">
+                    <a class="nav-link" href="{{ url_for('curation.get_curations', page=1, size=10) }}">Curate</a>
+                </li>
+                <li id="nav-item-login" class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                </li>
+            </ul>
+            <form class="form-inline my-2 my-lg-0">
+                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-secondary my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
+    </nav>
+</div>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<hr>
+<ul>
+    {% for message in messages %}
+    <li>{{ message }}</li>
+    {% endfor %}
+</ul>
+<hr>
+{% endif %}
+{% endwith %}
+
+<div class="container-fluid">
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>

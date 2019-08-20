@@ -1,94 +1,50 @@
 import pandas as pd
-import re
-from nltk.corpus import words
 
 from curami.commons import file_utils
-from curami.commons import word_processor
+from curami.commons.word_processor import WordProcessor
 
 
-first_cap_re = re.compile('(.)([A-Z][a-z]+)')
-all_cap_re = re.compile('([a-z0-9])([A-Z])')
+class AttributeCleaner:
+    def __init__(self):
+        self.attribute_conversion_map = self.populate_conversion_map()
 
-space_after_parenthesis_re = re.compile(r'\( ')
-space_before_parenthesis_re = re.compile(r' \)')
-space_after_bracket_re = re.compile(r'\[ ')
-space_before_bracket_re = re.compile(r' \]')
-extra_spaces_re = re.compile(r'\s+')
+    def populate_conversion_map(self):
+        attribute_conversion_map = {}
+        attr_diff_pd = pd.read_csv(file_utils.unique_attributes_file_final_diff_all,
+                                   header=None, encoding=file_utils.encoding)
 
-leading_apostrophe_dash = re.compile(r'^[-\']')
-dash_followed_by_underscore_re = re.compile(r'([-:=./])(_)')
-space_around_slash = re.compile(r' / | /|/ ')
-double_quotes_re = re.compile(r'(\"+)(.+?)(\"+)')
+        for index, row in attr_diff_pd.iterrows():  # todo remove nan
+            for i, r in enumerate(row):
+                if i != 0:
+                    attribute_conversion_map[r] = row[0]
+
+        return attribute_conversion_map
+
+    def get_clean_attribute(self, attribute):
+        if attribute in self.attribute_conversion_map:
+            return str(self.attribute_conversion_map[attribute])
+        else:
+            print("Warning: attribute not in conversion map: " + attribute)
+            return attribute
 
 
 def preprocess():
-    clean()
-
-
-def clean():
     file_utils.create_data_directory()
-    convert_attributes_to_simple_case()
-    convert_attributes_snake_case()
-    convert_attributes_remove_non_word_characters()
+    clean_attributes(True)  # camel case conversion
+    clean_attributes(False)  # without camel case conversion
+    merge_clean_processes()  # compare two and select best results
+    recalculate_coexistence_matrix()  # recalculate coexistence with cleaned attributes
 
 
-def camel_to_snake(original_attribute):
-    attribute = original_attribute
-    attribute = first_cap_re.sub(r'\1_\2', attribute)
-    attribute = all_cap_re.sub(r'\1_\2', attribute)
-    attribute = dash_followed_by_underscore_re.sub(r'\1', attribute)
-    if not words_more_than_two_characters(attribute):
-        attribute = original_attribute
-
-    return attribute.lower()
-
-
-def remove_whitespace_in_parenthesis(attribute):
-    attribute = space_after_parenthesis_re.sub("(", attribute)
-    attribute = space_before_parenthesis_re.sub(")", attribute)
-    attribute = space_after_bracket_re.sub("[", attribute)
-    attribute = space_before_bracket_re.sub("]", attribute)
-    return attribute
-
-
-def remove_other_fancy_characters(attribute):
-    attribute = leading_apostrophe_dash.sub("", attribute)
-    attribute = dash_followed_by_underscore_re.sub("-", attribute)
-    attribute = space_around_slash.sub("/", attribute)
-    attribute = attribute.replace("\"", "")
-    attribute = attribute.replace("_", " ")
-    attribute = attribute.replace("\\", "/")
-    attribute = extra_spaces_re.sub(" ", attribute)
-    return attribute.lower().strip()
-
-
-def words_more_than_two_characters(phrase):
-    phrase = phrase.replace("_", " ")
-    word_list = phrase.split()
-    for word in word_list:
-        if len(word) < 3 and word.lower() != "id":
-            return False
-    return True
-
-
-def dictionary_check(phrase):
-    word_list = phrase.split()
-    for word in word_list:
-        if word not in words.words():
-            return False
-    return True
-
-
-def convert_attributes_to_simple_case():
+def clean_attributes(do_camel_to_snake_conversion):
     # convert to simple case and remove underscore and trim
-    print("converting to simple case")
+    print("Attribute cleaning, camel_conversion = " + str(do_camel_to_snake_conversion))
     attributes = pd.read_csv(file_utils.unique_attributes_file, encoding="utf-8")
     simple_case_attributes = {}
     simple_case_attribute_list = {}
+    word_processor = WordProcessor()
     for index, row in attributes.iterrows():
-        # attribute = re.sub(r"\s+", " ", str(row["ATTRIBUTE"]).lower().replace("_", " ")).strip()
-        attribute = remove_other_fancy_characters(str(row["ATTRIBUTE"]))
-        attribute = remove_whitespace_in_parenthesis(attribute)
+        attribute = word_processor.cleanup_string(str(row["ATTRIBUTE"]), do_camel_to_snake_conversion)
         if attribute in simple_case_attributes:
             simple_case_attributes[attribute] = simple_case_attributes[attribute] + row["COUNT"]
             simple_case_attribute_list[attribute].append(row["ATTRIBUTE"])
@@ -97,89 +53,39 @@ def convert_attributes_to_simple_case():
             simple_case_attribute_list[attribute] = [attribute, row["ATTRIBUTE"]]
 
     pd_unique_attributes = pd.DataFrame(
-        list(sorted(simple_case_attributes.items(), key=lambda kv: kv[1], reverse=True)), columns=["ATTRIBUTE", "COUNT"])
-    pd_unique_attributes.to_csv(file_utils.unique_attributes_file_simple, index=False, encoding=file_utils.encoding)
+        list(sorted(simple_case_attributes.items(), key=lambda kv: kv[1], reverse=True)),
+        columns=["ATTRIBUTE", "COUNT"])
+    pd_unique_attributes.to_csv(file_utils.unique_attributes_file_final + '.camel=' + str(do_camel_to_snake_conversion)
+                                , index=False, encoding=file_utils.encoding)
 
     x = [item for item in simple_case_attribute_list.values() if len(item) > 2]
     pd_case_matched_attributes = pd.DataFrame(x)
-    pd_case_matched_attributes.to_csv(file_utils.unique_attributes_file_simple_diff, index=False, header=False, encoding=file_utils.encoding)
+    pd_case_matched_attributes.to_csv(
+        file_utils.unique_attributes_file_final_diff + '.camel=' + str(do_camel_to_snake_conversion),
+        index=False, header=False, encoding=file_utils.encoding)
 
     x = [item for item in simple_case_attribute_list.values() if len(item) > 1]
     pd_case_matched_attributes_all = pd.DataFrame(x)
-    pd_case_matched_attributes_all.to_csv(file_utils.unique_attributes_file_simple_diff_all, index=False, header=False, encoding=file_utils.encoding)
+    pd_case_matched_attributes_all.to_csv(
+        file_utils.unique_attributes_file_final_diff_all + '.camel=' + str(do_camel_to_snake_conversion),
+        index=False, header=False, encoding=file_utils.encoding)
 
     return list(simple_case_attributes.keys())
 
 
-def convert_attributes_snake_case():
-    print("converting camel to snake case")
-    attributes = pd.read_csv(file_utils.unique_attributes_file, encoding="utf-8")
-    simple_case_attributes = {}
-    simple_case_attribute_list = {}
-    for index, row in attributes.iterrows():
-        attribute = camel_to_snake(str(row["ATTRIBUTE"]))
-        # attribute = re.sub(r"\s+", " ", attribute.lower().replace("_", " ")).strip()
-        attribute = remove_other_fancy_characters(attribute)
-        attribute = remove_whitespace_in_parenthesis(attribute)
-        if attribute in simple_case_attributes:
-            simple_case_attributes[attribute] = simple_case_attributes[attribute] + row["COUNT"]
-            simple_case_attribute_list[attribute].append(row["ATTRIBUTE"])
-        else:
-            simple_case_attributes[attribute] = row["COUNT"]
-            simple_case_attribute_list[attribute] = [attribute, row["ATTRIBUTE"]]
-
-    pd_unique_attributes = pd.DataFrame(
-        list(sorted(simple_case_attributes.items(), key=lambda kv: kv[1], reverse=True)), columns=["ATTRIBUTE", "COUNT"])
-    pd_unique_attributes.to_csv(file_utils.unique_attributes_file_underscore, index=False, encoding="utf-8")
-
-    x = [item for item in simple_case_attribute_list.values() if len(item) > 2]
-    pd_case_matched_attributes = pd.DataFrame(x)
-    pd_case_matched_attributes.to_csv(file_utils.unique_attributes_file_underscore_diff, index=False, header=False, encoding=file_utils.encoding)
-
-    x = [item for item in simple_case_attribute_list.values() if len(item) > 1]
-    pd_case_matched_attributes_all = pd.DataFrame(x)
-    pd_case_matched_attributes_all.to_csv(file_utils.unique_attributes_file_underscore_diff_all, index=False, header=False, encoding=file_utils.encoding)
-
-
-def convert_attributes_remove_non_word_characters():
-    print("removing all punctuations")
-    attributes = pd.read_csv(file_utils.unique_attributes_file_simple, encoding="utf-8")
-    simple_case_attributes = {}
-    simple_case_attribute_list = {}
-    for index, row in attributes.iterrows():
-        attribute1 = str(row["ATTRIBUTE"]).strip()
-        attribute = re.sub(r"[^\w]", " ", str(row["ATTRIBUTE"]))
-        attribute = re.sub(r"\s+", " ", attribute.strip())
-        # if attribute != attribute1:
-        #     print(attribute1 + " -> " + attribute)
-
-        if attribute in simple_case_attributes:
-            simple_case_attributes[attribute] = simple_case_attributes[attribute] + row["COUNT"]
-            simple_case_attribute_list[attribute].append(row["ATTRIBUTE"])
-        else:
-            simple_case_attributes[attribute] = row["COUNT"]
-            simple_case_attribute_list[attribute] = [attribute, row["ATTRIBUTE"]]
-
-    pd_unique_attributes = pd.DataFrame(
-        list(sorted(simple_case_attributes.items(), key=lambda kv: kv[1], reverse=True)), columns=["ATTRIBUTE", "COUNT"])
-    pd_unique_attributes.to_csv(file_utils.unique_attributes_file_non_word, index=False, encoding="utf-8")
-
-    x = [item for item in simple_case_attribute_list.values() if len(item) > 2]
-    pd_case_matched_attributes = pd.DataFrame(x)
-    pd_case_matched_attributes.to_csv(file_utils.unique_attributes_file_non_word_diff, index=False, header=False, encoding=file_utils.encoding)
-
-
-
-def compare_cleanup_process():
-    # this method is too complicated, need to make it less complicated
+def merge_clean_processes():
+    # todo this method is too complicated, need to make it less complicated
     # Compare between two preprocessed set of attributes and select best attributes.
     # 1. If there are common attributes select them
     # 2. If there are dissimilar attributes select them based on dictionary or existence
 
-    pd_attr_1 = pd.read_csv(file_utils.unique_attributes_file_simple, encoding=file_utils.encoding)
-    pd_attr_2 = pd.read_csv(file_utils.unique_attributes_file_underscore, encoding=file_utils.encoding)
-    pd_attr_diff_1 = pd.read_csv(file_utils.unique_attributes_file_simple_diff_all, header=None, encoding=file_utils.encoding)
-    pd_attr_diff_2 = pd.read_csv(file_utils.unique_attributes_file_underscore_diff_all, header=None, encoding=file_utils.encoding)
+    print('loading data and preparing data structures')
+    pd_attr_1 = pd.read_csv(file_utils.unique_attributes_file_final + '.camel=False', encoding=file_utils.encoding)
+    pd_attr_2 = pd.read_csv(file_utils.unique_attributes_file_final + '.camel=True', encoding=file_utils.encoding)
+    pd_attr_diff_1 = pd.read_csv(file_utils.unique_attributes_file_final_diff_all + '.camel=False', header=None,
+                                 encoding=file_utils.encoding)
+    pd_attr_diff_2 = pd.read_csv(file_utils.unique_attributes_file_final_diff_all + '.camel=True', header=None,
+                                 encoding=file_utils.encoding)
 
     attr1_set = set(pd_attr_1["ATTRIBUTE"])
     attr2_set = set(pd_attr_2["ATTRIBUTE"])
@@ -194,20 +100,22 @@ def compare_cleanup_process():
 
     attribute1_to_conversion_map = {}
     attribute2_to_conversion_map = {}
-    for index, row in pd_attr_diff_1.iterrows():
+    for index, row in pd_attr_diff_1.iterrows():  # todo remove nan
         for i, r in enumerate(row):
-            if i != 0:
+            if i != 0 and r != '' and r == r:  # nan check x == x
                 attribute1_to_conversion_map[r] = row[0]
     for index, row in pd_attr_diff_2.iterrows():
         for i, r in enumerate(row):
-            if i != 0:
+            if i != 0 and r != '' and r == r:  # nan check x == x
                 attribute2_to_conversion_map[r] = row[0]
 
+    print('Comparing attributes')
     set_intersection = attr1_set.intersection(attr2_set)
     set_difference = attr1_set.difference(attr2_set)
 
     clean_attributes_conversions = {}
     clean_attribute_set = attr1_set.intersection(attr2_set)
+    print("Number of matched attributes in both sets: " + str(len(clean_attribute_set)))
 
     # put common attributes in the both set to final list
     for attribute in clean_attribute_set:
@@ -243,41 +151,48 @@ def compare_cleanup_process():
             first_value = attribute1_to_conversion_map[key]
             second_value = attribute2_to_conversion_map[key]
             if first_value == val[0]:
-                print("first value get second: " + first_value + " X " + key + " Y " + second_value)
+                print("Second value is already in the set: original = " + key +
+                      ", first = " + first_value + " , second[y] = " + second_value)
                 clean_attribute_set.add(second_value)
                 if second_value in clean_attributes_conversions:
                     clean_attributes_conversions[second_value].add(key)
                 else:
                     clean_attributes_conversions[second_value] = {key}
             if second_value == val[0]:
-                print("second value get first: " + second_value + " X " + key + " Y " + first_value)
+                print("First value is already in the set: original = " + key +
+                      ", first[y] = " + first_value + " , second = " + second_value)
                 clean_attribute_set.add(first_value)
                 if first_value in clean_attributes_conversions:
                     clean_attributes_conversions[first_value].add(key)
                 else:
                     clean_attributes_conversions[first_value] = {key}
         if len(val) == 2:
-            select_first = dictionary_check(val[0])
-            select_second = dictionary_check(val[1])
+            select_first = WordProcessor.dictionary_check(val[0])
+            select_second = WordProcessor.dictionary_check(val[1])
 
             if select_first and select_second:
-                print("impossible: " + str(val))
+                print("Both phrases matched with the dictionary: " + key + ", " + str(val))
+                clean_attribute_set.add(key)
+                if key in clean_attributes_conversions:
+                    clean_attributes_conversions[key].add(key)
+                else:
+                    clean_attributes_conversions[key] = {key}
             elif select_first:
-                print("first value: " + str(val))
+                print("First selected: " + key + ", " + str(val))
                 clean_attribute_set.add(val[0])
                 if val[0] in clean_attributes_conversions:
                     clean_attributes_conversions[val[0]].add(key)
                 else:
                     clean_attributes_conversions[val[0]] = {key}
             elif select_second:
-                print("second value: " + str(val))
+                print("Second selected: " + key + ", " + str(val))
                 clean_attribute_set.add(val[1])
                 if val[1] in clean_attributes_conversions:
                     clean_attributes_conversions[val[1]].add(key)
                 else:
                     clean_attributes_conversions[val[1]] = {key}
             else:
-                print("cant help with: " + str(val))
+                print("No dictionary match, adding original value: " + key + ", " + str(val))
                 clean_attribute_set.add(key)
                 if key in clean_attributes_conversions:
                     clean_attributes_conversions[key].add(key)
@@ -298,6 +213,7 @@ def compare_cleanup_process():
             else:
                 clean_attributes[attribute] = attribute_frequency_map[original_attribute]
 
+    print('persisting to file system')
     pd_unique_attributes = pd.DataFrame(
         list(sorted(clean_attributes.items(), key=lambda kv: kv[1], reverse=True)),
         columns=["ATTRIBUTE", "COUNT"])
@@ -320,7 +236,34 @@ def compare_cleanup_process():
                                       encoding=file_utils.encoding)
 
 
+# calculate coexistence again for the cleaned attributes
+def recalculate_coexistence_matrix():
+    coexistence_map = {}
+    coexistence_original_pd = pd.read_csv(file_utils.coexistence_file, encoding=file_utils.encoding)
+    attribute_cleaner = AttributeCleaner()
+    for index, row in coexistence_original_pd.iterrows():
+        attribute1 = attribute_cleaner.get_clean_attribute(row[0])
+        attribute2 = attribute_cleaner.get_clean_attribute(row[1])
+        count = int(row[2])
+
+        if attribute1 > attribute2:
+            temp = attribute1
+            attribute1 = attribute2
+            attribute2 = temp
+
+        combined_key = attribute1 + "~" + attribute2
+        if combined_key not in coexistence_map:
+            coexistence_map[combined_key] = {"ATTRIBUTE_1": attribute1, "ATTRIBUTE_2": attribute2, "COUNT": count}
+        else:
+            coexistence_map[combined_key]["COUNT"] = coexistence_map[combined_key]["COUNT"] + count
+
+    print("Writing to filesystem")
+    pd_unique_attributes = pd.DataFrame(
+        list(sorted(coexistence_map.values(), key=lambda kv: kv["COUNT"], reverse=True)),
+        columns=["ATTRIBUTE_1", "ATTRIBUTE_2", "COUNT"])
+    pd_unique_attributes.to_csv(file_utils.coexistence_file_final, index=False, encoding="utf-8")
+
 
 if __name__ == "__main__":
-    # preprocess()
-    compare_cleanup_process()
+    preprocess()
+

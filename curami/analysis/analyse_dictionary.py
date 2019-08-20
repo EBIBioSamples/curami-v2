@@ -2,6 +2,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from curami import commons as file_utils
 import json
 
+# todo delete this file
 
 def test_count_vectorizer():
     vectorizer = CountVectorizer()
