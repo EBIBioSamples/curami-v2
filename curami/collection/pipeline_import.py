@@ -1,11 +1,14 @@
 import json
+import logging
+
 from curami.commons import file_utils
 
-export_file_path = "/home/isuru/export.20190608T230001Z.json"
+# this module will breakdown the large json file taken from biosamples export pipeline
+export_file_path = "~/export.20190608T230001Z.json"
 chunk_size = 100000
 
 
-def main(*args):
+def main():
     breakdown_to_smaller_chunks()
 
 
@@ -15,10 +18,12 @@ def breakdown_to_smaller_chunks():
     with open(export_file_path, "r") as data_file:
         sample_list = []
         for line in data_file:
-            if line == "[\n":  # beginning of the array
+            if line == "[\n":  # beginning of the array/document
+                logging.info("We are at the beginning of the document")
                 continue
-            elif line == "]\n" or line == "]": # end of the array
+            elif line == "]\n" or line == "]":  # end of the array/document
                 write_to_file(sample_list, file_count)
+                logging.info("We are at the end of the document")
                 continue
 
             if line[-2] == ',':
@@ -34,17 +39,12 @@ def breakdown_to_smaller_chunks():
                 sample_list = []
                 file_count = file_count + 1
 
-        # line = data_file.readline()
-        #
-        # if line == "[\n":
-        #     print("Started reading export file")
-        # else:
-        #     print("Wrong start line: " + line)
-
 
 def write_to_file(sample_list, file_count):
+    logging.info("Writing chunk to file filename: %d", file_count)
     with open(file_utils.combined_data_directory + str(file_count) + file_utils.data_extension, "w") as output:
         output.write(json.dumps(sample_list, indent=4))
 
 
-main()
+if __name__ == '__main__':
+    main()

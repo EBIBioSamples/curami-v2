@@ -1,10 +1,17 @@
-import os
-import sys
 import json
+import os
 import queue
+import sys
 import threading
+
 import requests
+
 from curami.commons import utils, file_utils
+
+# Crawl biosamples public api to get all samples and save them in small files.
+# Here each request make a new file and save page_size number of samples in that file.
+# Then combine_files() will build larger files from these small files for ease of processing and storage.
+# Since server times out if we use larger page_size value, we have keep this and thread_count in check
 
 # base_url = "http://wwwdev.ebi.ac.uk/biosamples/samples"
 base_url = "http://wp-p2m-40:8081/biosamples/samples"
@@ -22,7 +29,7 @@ continue_from_page = 8733
 def main(*args):
     get_all_samples()
     # Combine files after collecting data,
-    # This step is not necessary page size can be set to higher value if server supports it
+    # This step is not necessary, page size can be set to higher value if server supports it
     # combine_files(100)
 
 
@@ -67,7 +74,6 @@ def worker_thread():
         else:
             parameter_queue.task_done()
 
-        # utils.show_progress((1 - parameter_queue.qsize() * page_size / total_records) * 100)
         utils.show_progress(parameter_queue.qsize(), total_records, page_size)
 
 
@@ -116,7 +122,3 @@ def combine_files(count):
 
 if __name__ == '__main__':
     main(*sys.argv[1:])
-
-# get_all_samples()
-# Percentage = 76%, total completed requests = 19376
-# Percentage = 8%, total completed requests = 8733
