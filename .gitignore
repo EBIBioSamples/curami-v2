@@ -1,6 +1,8 @@
 .idea/
 data/
+neo4j/
 venv/
 **/__pycache__/*
 **/curami.egg-info/*
 *dist/*
+generate_curation_rules.py
