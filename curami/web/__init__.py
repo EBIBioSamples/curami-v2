@@ -1,3 +1,5 @@
+import logging
+
 from flask import Flask
 from curami.web.auth_controller import auth as auth_blueprint
 from curami.web.curation_controller import app as curation_blueprint
@@ -9,6 +11,9 @@ def create_app():
 
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(curation_blueprint)
+
+    # logging configuration
+    logging.basicConfig(level=logging.INFO)
 
     return app
 

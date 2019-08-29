@@ -3,7 +3,9 @@ import pandas as pd
 import spell
 from curami.commons import file_utils
 
-# find spelling mistakes of identified similar pairs in previous step
+'''
+find spelling mistakes of identified similar pairs in previous step
+'''
 match_ratio = 0.85
 
 

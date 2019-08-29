@@ -1,16 +1,13 @@
-import sys
 import logging
 
-from py2neo import Graph, NodeMatcher, RelationshipMatcher, NodeMatch, RelationshipMatch, Node, Relationship
-from neo4j import GraphDatabase
+from py2neo import Graph, NodeMatcher, RelationshipMatch, Node
 
-# sys.path.append("/home/isuru/Projects/curami-v2")
+from curami.commons.models import Curation, RelationshipType
 
-from curami.web.models import Curation
-
-db_url = 'http://localhost:7474/db/data'
-username='neo4j'
-password='neo5j'
+# db_url = 'bolt://neo4j:7687'
+db_url = "bolt://localhost:7687"
+userName = "neo4j"
+password = "neo5j"
 
 
 def get_attribute_relationships(page, size):
@@ -28,20 +25,23 @@ def get_attribute_relationships(page, size):
 def get_suggested_curations(page, size, user):
     curations = []
     graph = connect_to_graph()
+    results = graph.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) RETURN r "
+                        "ORDER BY r.confidence DESC SKIP " + str((page-1)*size) + " LIMIT " + str(size))
 
-    rel_match = RelationshipMatch(graph, r_type='LOOKS_SIMILAR', skip=(page-1)*size, limit=size).order_by("_.confidence")
-    # rel_match = RelationshipMatch(graph, r_type='looks_similar', skip=page*size, limit=size).order_by("_.correlation")
-    for relation in rel_match.__iter__():
-        attribute_1 = relation.nodes[0]['name']
-        attribute_2 = relation.nodes[1]['name']
+    for relation in results:
+        attribute_1 = relation['r'].start_node['name']
+        attribute_2 = relation['r'].end_node['name']
         curation = Curation(attribute_1, attribute_2)
 
-        print(attribute_1 + "_" + attribute_2 + "_" + user)
-        type, attribute_curated = get_manual_curations(attribute_1, attribute_2, user)
-        if type is not None:
-            curation.attribute_curated = attribute_curated
-            curation.type = type
+        curation.attribute_1.count = relation['r'].start_node['count']
+        curation.attribute_1.quality = relation['r'].start_node['quality']
+        curation.attribute_2.count = relation['r'].end_node['count']
+        curation.attribute_2.quality = relation['r'].end_node['quality']
 
+        rel_type, attribute_curated = get_manual_curations(attribute_1, attribute_2, user)
+        if rel_type is not None:
+            curation.attribute_curated = attribute_curated
+            curation.type = rel_type
 
         curations.append(curation)
 
@@ -56,17 +56,10 @@ def get_manual_curations(attribute_1, attribute_2, user):
                         "(b:Attribute {name: '" + attribute_2 + "'}) WHERE r.owner='" + user + "'  RETURN r")
 
     for relation in results:
-        if type(results['r']).__name__ != 'LOOKS_SIMILAR':
+        if type(results['r']).__name__ in RelationshipType.get_curation_type_names():
             return type(results['r']).__name__, relation['r']['attribute']
 
     return None, None
-        # relationship = relation['r']
-        # node_1 = relationship.start_node
-        # node_2 = relationship.end_node
-        # relationship['attribute']
-        # relationship['owner']
-        # type(results['r']).__name__
-        # relationships.append((relation['r']))
 
 
 def get_relationships(attribute_1, attribute_2):
@@ -101,7 +94,7 @@ def add_curation(attribute_1, attribute_2, attribute_curated, user):
     delete_created_relationships = "MATCH (a:Attribute {name: '" + attribute_1 + "'})-[r]->(b:Attribute {name: '" + attribute_2 + "'}) " \
                                    "WHERE (a)-[r:SAME_AS {owner : '" + user + "'}]-(b) " \
                                         "OR (a)-[r:DIFFERENT_FROM {owner : '" + user + "'}]-(b) " \
-                                        "OR (a)-[r:DIFFICULT_TO_SAY {owner : '" + user + "'}]-(b) " \
+                                        "OR (a)-[r:IGNORES {owner : '" + user + "'}]-(b) " \
                                    "DELETE r"
 
     create_relationship = "MATCH (a:Attribute),(b:Attribute) " \
@@ -119,7 +112,7 @@ def reject_curation(attribute_1, attribute_2, user):
     delete_created_relationships = "MATCH (a:Attribute {name: '" + attribute_1 + "'})-[r]->(b:Attribute {name: '" + attribute_2 + "'}) " \
                                    "WHERE (a)-[r:SAME_AS {owner : '" + user + "'}]-(b) " \
                                           "OR (a)-[r:DIFFERENT_FROM {owner : '" + user + "'}]-(b) " \
-                                          "OR (a)-[r:DIFFICULT_TO_SAY {owner : '" + user + "'}]-(b) " \
+                                          "OR (a)-[r:IGNORES {owner : '" + user + "'}]-(b) " \
                                    "DELETE r"
 
     create_relationship = "MATCH (a:Attribute),(b:Attribute) " \
@@ -137,16 +130,28 @@ def ignore_curation(attribute_1, attribute_2, user):
     delete_created_relationships = "MATCH (a:Attribute {name: '" + attribute_1 + "'})-[r]->(b:Attribute {name: '" + attribute_2 + "'}) " \
                                    "WHERE (a)-[r:SAME_AS {owner : '" + user + "'}]-(b) " \
                                           "OR (a)-[r:DIFFERENT_FROM {owner : '" + user + "'}]-(b) " \
-                                          "OR (a)-[r:DIFFICULT_TO_SAY {owner : '" + user + "'}]-(b) " \
+                                          "OR (a)-[r:IGNORES {owner : '" + user + "'}]-(b) " \
                                    "DELETE r"
 
     create_relationship = "MATCH (a:Attribute),(b:Attribute) " \
                           "WHERE a.name = '" + attribute_1 + "' AND b.name = '" + attribute_2 + "' " \
-                          "CREATE (a)-[r:DIFFICULT_TO_SAY {owner: '" + user + "'}]->(b) " \
+                          "CREATE (a)-[r:IGNORES {owner: '" + user + "'}]->(b) " \
                           "RETURN type(r)"
 
     graph.run(delete_created_relationships)
     graph.run(create_relationship)
+
+
+def create_attribute(attribute):
+    graph = connect_to_graph()
+    merge_node = "MERGE (a:Attribute {name: '" + attribute.name + "', quality: " + str(attribute.quality) + "}) RETURN a"
+    graph.run(merge_node)
+
+
+def update_attribute_quality(attribute, quality):
+    graph = connect_to_graph()
+    merge_node = "MATCH (n { name: 'time point days post infection' }) SET n.quality = n.quality + 0.5 RETURN n"
+    graph.run(merge_node)
 
 
 # authentication
@@ -163,9 +168,8 @@ def get_user(username):
     return node
 
 
-
 def connect_to_graph():
-    graph = Graph('http://localhost:7474/db/data', user='neo4j', password='neo5j')
+    graph = Graph(db_url, user=userName, password=password)
     return graph
 
 
@@ -175,5 +179,7 @@ if __name__ == '__main__':
     # create_user('isuru', 'isuru')
     # usernode = get_user('isuru')
     # print(usernode)
-    relations = get_manual_curations('', '', '')
+    # relations = get_manual_curations('', '', '')
+    relations = get_suggested_curations(10, 10, '')
     print(relations)
+

@@ -1,6 +1,7 @@
 import re
-from nltk.corpus import words
+
 import inflection
+from nltk.corpus import words
 
 first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 all_cap_re = re.compile('([a-z0-9])([A-Z])')
@@ -16,28 +17,6 @@ double_quotes_re = re.compile(r'(\"+)(.+?)(\"+)')
 abbreviations = {}
 metrics = {}
 short_words = set()
-
-
-# def main():
-#     populate_abbreviations()
-#     populate_metrics()
-#     populate_short_words()
-#     test()
-#
-# def test():
-#     test1 = 'samp_id'
-#     print(cleanup_string(test1, True))
-
-new_string = 'hello world (   how are    You )'
-new_string1 = 'hello world [  how are    You ]'
-print(new_string.replace('.*', "o"))
-spaces_in_parenthesis = re.compile('\\(\s+(.*)\s+\\)')
-clean_string = spaces_in_parenthesis.sub(r'(\1)', new_string)
-print(clean_string)
-
-spaces_in_parenthesis = re.compile('([([])\s+(.*)\s+([\\)\\]])')
-print(spaces_in_parenthesis.sub(r'\1\2\3', new_string))
-print(spaces_in_parenthesis.sub(r'\1\2\3', new_string1))
 
 
 class WordProcessor:
@@ -139,8 +118,5 @@ class WordProcessor:
         with open("../../resources/short_words.txt", 'r') as short_word_file:
             for word in short_word_file:
                 short_words.add(WordProcessor.normalize_word(word))
-
-
-
 
 # main()

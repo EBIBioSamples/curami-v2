@@ -1,7 +1,5 @@
-import logging
-
-from flask import Flask, escape, url_for, render_template, request, abort, session, Blueprint, jsonify
-from curami.web import neo4j_connector, curation_service, auth_service, helper_service
+from flask import render_template, request, abort, Blueprint, jsonify, make_response, redirect, url_for
+from curami.web import curation_service, helper_service, auth_service
 
 app = Blueprint('curation', __name__)
 
@@ -22,9 +20,12 @@ def user_summary():
 @app.route('/curations', methods=['GET', 'POST'])
 def get_curations():
     username = request.cookies.get('username')
-    if username is None:
-        username = 'guest'
-    # print("user in session" + str(auth_service.check_user_session(session['isuru'])))
+    # if username is None:
+    #     username = 'guest'
+
+    if username is None and not auth_service.check_user_session(username):
+        response = make_response(redirect(url_for('auth.login')))
+        return response
 
     if request.method == 'GET':
         page = int(request.args.get('page', default=1))

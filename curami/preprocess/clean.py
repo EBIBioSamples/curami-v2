@@ -3,6 +3,27 @@ import pandas as pd
 from curami.commons import file_utils
 from curami.commons.word_processor import WordProcessor
 
+'''Clean attributes and try to combine them
+Clean attributes by,
+- Converting camel case to snake case
+- Removing underscore
+- Converting capital case to simple case (exception list for abbreviations)
+- Removing selected special characters
+And try to merge cleaned attributes to reduce attribute count. Recalculate coexistence file to include merged attributes.
+
+Camel to snake case conversion is not 100% correct all the time. 
+Therefore we clean once with camel to snake conversion and once without it.
+Out of these two sets of attributes select the best attributes by considering,
+- If given attribute exists in both sets
+- If attribute is only present in one set
+
+Generates files
+- unique attribute file - all unique attributes and their occurrence
+- unique attribute diff - clean attribute and their original values for attributes that changed
+- unique attributes diff all - clean attribute and their original values for all the attributes
+- attribute coexistence file (recalculate for original)
+'''
+
 
 class AttributeCleaner:
     def __init__(self):
@@ -257,7 +278,7 @@ def recalculate_coexistence_matrix():
         else:
             coexistence_map[combined_key]["COUNT"] = coexistence_map[combined_key]["COUNT"] + count
 
-    print("Writing to filesystem")
+    print("Writing attribute coexistence to filesystem")
     pd_unique_attributes = pd.DataFrame(
         list(sorted(coexistence_map.values(), key=lambda kv: kv["COUNT"], reverse=True)),
         columns=["ATTRIBUTE_1", "ATTRIBUTE_2", "COUNT"])
@@ -266,4 +287,3 @@ def recalculate_coexistence_matrix():
 
 if __name__ == "__main__":
     preprocess()
-

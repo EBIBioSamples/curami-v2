@@ -1,49 +1,49 @@
 import sys
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import pandas as pd
+from py2neo import Node, Relationship
 from neo4j import GraphDatabase
 from tqdm import tqdm
-import networkx as nx
-import matplotlib.pyplot as plt
 
 import file_utils
-from py2neo import Node, Graph, Relationship
-import pandas as pd
-
-uri = "bolt://localhost:7687"
-userName = "neo4j"
-password = "neo5j"
+from curami.commons import neo4j_connector
 
 
-def build_graph_for_curation():
+from multiprocessing import pool
+
+
+def build_curation_graph():
     attribute_misspelling_df = pd.read_csv(file_utils.dictionary_matched_attribute_file, encoding=file_utils.encoding)
 
-    graph = Graph(uri, user=userName, password=password)
+    graph = neo4j_connector.connect_to_graph()
     graph.delete_all()
+
+    attribute_map = build_attribute_map()
 
     for index, row in attribute_misspelling_df.iterrows():
         node1_name = row[0]
         node2_name = row[1]
         probability = row[2]
 
-        node1 = Node("attribute", attribute=node1_name)
-        node2 = Node("attribute", attribute=node2_name)
-        node1_node2 = Relationship(node1, "looks_similar", node2, probability=probability)
+        node1 = Node("Attribute", name=node1_name, count=attribute_map[node1_name], quality=0)
+        node2 = Node("Attribute", count=attribute_map[node2_name], name=node2_name, quality=0)
+        node1_node2 = Relationship(node1, "LOOKS_SIMILAR", node2, confidence=probability, owner='machine')  # add owner
 
-        graph.merge(node1_node2, "attribute", "attribute")
+        graph.merge(node1_node2, "name", "name")
 
     print("Finished loading data into neo4j")
 
 
-def build_graph():
-    attributes_pd = pd.read_csv(file_utils.unique_attributes_file_final, encoding=file_utils.encoding)
+def build_cooccurance_graph2():
     coexistence_pd = pd.read_csv(file_utils.coexistence_file_final, encoding=file_utils.encoding)
-    print("Loading " + str(len(attributes_pd)) + " Attributes and " + str(len(coexistence_pd)) + " Links")
+    print("Loading " + str(len(coexistence_pd)) + " Links from coexistence file")
 
-    graph = Graph(uri, user=userName, password=password)
+    graph = neo4j_connector.connect_to_graph()
     graph.delete_all()
 
-    attribute_map = {}
-    for index, row in attributes_pd.iterrows():
-        attribute_map[row["ATTRIBUTE"]] = row["COUNT"]
+    attribute_map = build_attribute_map()
 
     progress_bar = tqdm(total=len(coexistence_pd))
     for index, row in coexistence_pd.iterrows():
@@ -51,16 +51,50 @@ def build_graph():
         node2_name = row["ATTRIBUTE_2"]
         correlation = row["COUNT"]
 
-        node1 = Node("attribute", count=attribute_map[node1_name], attribute=node1_name)
-        node2 = Node("attribute", count=attribute_map[node2_name], attribute=node2_name)
-        node1_node2 = Relationship(node1, "cooccurs_with", node2, correlation=correlation)
+        node1 = Node("Attribute", name=node1_name, count=attribute_map[node1_name], quality=0)
+        node2 = Node("Attribute", name=node2_name, count=attribute_map[node2_name], quality=0)
+        node1_node2 = Relationship(node1, "COOCCURS_WITH", node2, correlation=correlation)
 
-        graph.merge(node1_node2, "attribute", "attribute")
+        graph.merge(node1_node2, "name", "name")
         progress_bar.update(1)
 
     print("Finished loading data into neo4j")
 
-    # node = Node("attribute", )
+
+def build_cooccurance_graph():
+    coexistence_pd = pd.read_csv(file_utils.coexistence_file_final, encoding=file_utils.encoding)
+    print("Loading " + str(len(coexistence_pd)) + " Links from coexistence file")
+
+    graph = neo4j_connector.connect_to_graph()
+    graph.delete_all()
+
+    attribute_map = build_attribute_map()
+
+    progress_bar = tqdm(total=len(coexistence_pd))
+    job_list = []
+    job_list_size = 1000
+    p = pool.Pool(processes=8)
+
+    for index, row in coexistence_pd.iterrows():
+        if (index + 1) % job_list_size == 0:
+            results = p.map(persist_relationship, job_list)
+            for result in results:
+                progress_bar.update(1)
+            job_list = []
+        else:
+            job_list.append([row["ATTRIBUTE_1"], row["ATTRIBUTE_2"], row["COUNT"], attribute_map, graph])
+
+
+
+    print("Finished loading data into neo4j")
+
+
+def persist_relationship(node1_name, node2_name, correlation, attribute_map, graph):
+    node1 = Node("Attribute", name=node1_name, count=attribute_map[node1_name], quality=0)
+    node2 = Node("Attribute", name=node2_name, count=attribute_map[node2_name], quality=0)
+    node1_node2 = Relationship(node1, "COOCCURS_WITH", node2, correlation=correlation)
+
+    graph.merge(node1_node2, "name", "name")
 
 
 def generate_visualisation_formats():
@@ -76,7 +110,6 @@ def generate_visualisation_formats():
     for index, row in attribute_count_df.iterrows():
         attribute_count[row[0]] = {'WEIGHT': row[1]}
 
-
     # attribute_count_df['WEIGHT'] = 'WEIGHT'
     # attribute_count = attribute_count_df.set_index('ATTRIBUTE').to_dict()
     # attribute_count = dict(zip(attribute_count_df.ATTRIBUTE, attribute_count_df.COUNT))
@@ -89,9 +122,19 @@ def generate_visualisation_formats():
     plt.show()
 
 
+def build_attribute_map():
+    attributes_pd = pd.read_csv(file_utils.unique_attributes_file_final, encoding=file_utils.encoding)
+    attribute_map = {}
+    for index, row in attributes_pd.iterrows():
+        attribute_map[row["ATTRIBUTE"]] = row["COUNT"]
+
+    print("Loaded " + str(len(attributes_pd)) + " unique attributes")
+    return attribute_map
+
+
 def main(*args):
-    # build_graph()
-    build_graph_for_curation()
+    # build_cooccurance_graph()
+    build_curation_graph()
     # generate_visualisation_formats()
 
 

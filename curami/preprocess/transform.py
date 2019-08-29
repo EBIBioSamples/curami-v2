@@ -1,22 +1,35 @@
 import json
+import logging
+
 import pandas as pd
 from tqdm import tqdm
 
 from curami.commons import file_utils
 from curami.commons import set_encoder
 
+''' Transform collected data
+Data collected are transformed into formats that are easier to analyze.
+This process generate following files
+- attribute value file
+- unique attribute file
+- unique value file
+- attribute coexistence file
+- all data file (this file is too big and not really useful, therefore commented out)
+'''
+
 
 def preprocess():
-    print("Transforming data")
-    from_file_no = 1
+    logging.info("Transforming data")
+    from_file_no = 0
     to_file_no = 106  # inclusive
     generate_attribute_value_files(from_file_no, to_file_no)  # unique attributes, unique values, attribute-values files
-    # generate_all_data_file(from_file_no, to_file_no)  # this file is too big, difficult to process
     generate_coexistence_file(from_file_no, to_file_no)
+    # generate_all_data_file(from_file_no, to_file_no)  # this file is too big, difficult to process
+    logging.info("Finished generating all the files")
 
 
 def generate_attribute_value_files(from_file_no, to_file_no):
-    print("Generating attribute, value files in " + file_utils.intermediate_data_directory)
+    logging.info("Generating attribute, value files")
     unique_attributes = {}
     unique_values = {}
     attribute_values_map = {}
@@ -47,7 +60,7 @@ def generate_attribute_value_files(from_file_no, to_file_no):
                 else:
                     attribute_values_map[key] = {value}
 
-    print("Writing to files")
+    logging.info("Writing attribute, value files in %s", file_utils.intermediate_data_directory)
     pd_unique_attributes = pd.DataFrame(
         list(sorted(unique_attributes.items(), key=lambda kv: kv[1], reverse=True)), columns=["ATTRIBUTE", "COUNT"])
     pd_unique_attributes.to_csv(file_utils.unique_attributes_file, index=False, encoding="utf-8")
@@ -60,7 +73,7 @@ def generate_attribute_value_files(from_file_no, to_file_no):
         output.write(json.dumps(attribute_values_map, indent=4, cls=set_encoder.SetEncoder))
 
     # generate summary and write to file
-    print("Writing summary to file")
+    logging.info("Writing summary to file")
     summary = dict()
     summary["total samples"] = total_samples
     summary["total attributes-value count"] = sum(unique_attributes.values())
@@ -70,8 +83,45 @@ def generate_attribute_value_files(from_file_no, to_file_no):
         output.write(json.dumps(summary, indent=4))
 
 
+def generate_coexistence_file(from_file_no, to_file_no):
+    logging.info("Generating coexistence file")
+
+    coexistence_map = {}
+
+    for i in tqdm(range(from_file_no, to_file_no + 1)):
+        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+            sample_list = json.load(data_file)
+
+        for sample in sample_list:
+            attribute_values = sample["characteristics"]
+            sample_attribute_list = list(attribute_values.keys())
+
+            for i, outer_attribute in enumerate(sample_attribute_list):
+                for inner_attribute in sample_attribute_list[i + 1:]:
+                    attribute1 = outer_attribute
+                    attribute2 = inner_attribute
+
+                    if outer_attribute > inner_attribute:
+                        attribute1 = inner_attribute
+                        attribute2 = outer_attribute
+
+                    combined_key = attribute1 + "~" + attribute2
+
+                    if combined_key not in coexistence_map:
+                        coexistence_map[combined_key] = {"ATTRIBUTE_1": attribute1, "ATTRIBUTE_2": attribute2,
+                                                         "COUNT": 0}
+
+                    coexistence_map[combined_key]["COUNT"] = coexistence_map[combined_key]["COUNT"] + 1
+
+    logging.info("Writing coexistence file in %s", file_utils.intermediate_data_directory)
+    pd_unique_attributes = pd.DataFrame(
+        list(sorted(coexistence_map.values(), key=lambda kv: kv["COUNT"], reverse=True)),
+        columns=["ATTRIBUTE_1", "ATTRIBUTE_2", "COUNT"])
+    pd_unique_attributes.to_csv(file_utils.coexistence_file, index=False, encoding="utf-8")
+
+
 def generate_all_data_file(from_file_no, to_file_no):
-    # generating all data file, seems like this file is too large with lot of sparce data
+    # generating all data file, seems like this file is too large with lot of sparse data
     pd_unique_attributes = pd.read_csv(file_utils.unique_attributes_file)
     columns = pd_unique_attributes["ATTRIBUTE"][0:100].tolist()
     columns_set = set(columns)
@@ -111,43 +161,6 @@ def generate_all_data_file(from_file_no, to_file_no):
     # with open(file_utils.all_data_file, "w") as output:
     #     pd_data_list.to_csv(output, index=False, encoding="utf-8")
     # print(pd_data_list.head())
-
-
-def generate_coexistence_file(from_file_no, to_file_no):
-    print("Generating coexistence file in " + file_utils.intermediate_data_directory)
-
-    coexistence_map = {}
-
-    for i in tqdm(range(from_file_no, to_file_no + 1)):
-        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
-            sample_list = json.load(data_file)
-
-        for sample in sample_list:
-            attribute_values = sample["characteristics"]
-            sample_attribute_list = list(attribute_values.keys())
-
-            for i, outer_attribute in enumerate(sample_attribute_list):
-                for inner_attribute in sample_attribute_list[i + 1:]:
-                    attribute1 = outer_attribute
-                    attribute2 = inner_attribute
-
-                    if outer_attribute > inner_attribute:
-                        attribute1 = inner_attribute
-                        attribute2 = outer_attribute
-
-                    combined_key = attribute1 + "~" + attribute2
-
-                    if combined_key not in coexistence_map:
-                        coexistence_map[combined_key] = {"ATTRIBUTE_1": attribute1, "ATTRIBUTE_2": attribute2,
-                                                         "COUNT": 0}
-
-                    coexistence_map[combined_key]["COUNT"] = coexistence_map[combined_key]["COUNT"] + 1
-
-    print("Writing to filesystem")
-    pd_unique_attributes = pd.DataFrame(
-        list(sorted(coexistence_map.values(), key=lambda kv: kv["COUNT"], reverse=True)),
-        columns=["ATTRIBUTE_1", "ATTRIBUTE_2", "COUNT"])
-    pd_unique_attributes.to_csv(file_utils.coexistence_file, index=False, encoding="utf-8")
 
 
 if __name__ == "__main__":

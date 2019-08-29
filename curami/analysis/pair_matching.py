@@ -1,10 +1,16 @@
-import pandas as pd
 from difflib import SequenceMatcher
-from tqdm import tqdm
 from multiprocessing import pool
+
+import pandas as pd
+from tqdm import tqdm
 
 from curami.commons import file_utils
 
+'''
+Match pair of attributes for their similarity
+Generates matched attribute file by measuring the syntactic similarity between two attributes.
+Outputs two attributes and similarity score
+'''
 
 match_ratio = 0.85
 
@@ -60,20 +66,38 @@ def compare(attribute_list):
     return matched_attributes
 
 
-if __name__ == "__main__":
-    # analyze()
-    a = 'hello how are you'
-    b = 'hello are yo doing'
-    s = SequenceMatcher(None, a, b)
+def compare_and_highlight_difference(attribute_1, attribute_2):
+    s = SequenceMatcher(None, attribute_1, attribute_2)
 
     result_a = ''
-    
     result_b = ''
     previous_block = None
     for block in s.get_matching_blocks():
         if previous_block is not None:
-            result_a = result_a + "<br>" +  a[previous_block[0]+previous_block[2]:block[0]] + "<br>"
-        result_a = result_a + (a[block[0]:block[0]+block[2]])
+            result_a = result_a + "<mark>" +  attribute_1[previous_block[0]+previous_block[2]:block[0]] + "</makr>"
+        result_a = result_a + (attribute_1[block[0]:block[0]+block[2]])
         previous_block = block
-        # print(block)
-    print(result_a)
+    return result_a
+
+
+if __name__ == "__main__":
+    # analyze()
+
+
+    compare_and_highlight_difference('hello how are you', 'hello are yo doing')
+    compare_and_highlight_difference('hello how are you', 'hello how are you')
+    # a = 'hello how are you'
+    # b = 'hello are yo doing'
+    # s = SequenceMatcher(None, a, b)
+    #
+    # result_a = ''
+    #
+    # result_b = ''
+    # previous_block = None
+    # for block in s.get_matching_blocks():
+    #     if previous_block is not None:
+    #         result_a = result_a + "<br>" +  a[previous_block[0]+previous_block[2]:block[0]] + "<br>"
+    #     result_a = result_a + (a[block[0]:block[0]+block[2]])
+    #     previous_block = block
+    #     # print(block)
+    # print(result_a)

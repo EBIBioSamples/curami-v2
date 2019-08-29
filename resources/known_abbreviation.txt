@@ -4,6 +4,7 @@ EGA
 SRA
 INSDC
 DNA
+RNA
 BioSD
 dbGAP
 1000genomes
@@ -28,8 +29,10 @@ BioMedBridges
 BioModels
 BioProject
 BioSamples
+BioSample
 BioServices
 BioStudies Database
+BioSource
 BLAST [nucleotide]
 BLAST [protein]
 BoM
@@ -266,3 +269,4 @@ WTSI
 wwPDB
 XML
 ZMP
+PubMed

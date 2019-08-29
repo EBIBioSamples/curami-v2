@@ -61,7 +61,10 @@
                 </div>
                 <input id="{{ 'input_radio_attribute_1_' + loop.index|string }}" type="text" class="form-control"
                        aria-label="Text input with radio button"
-                       value="{{ curation.attribute_1.name }}" readonly>
+                       value="{{ curation.attribute_1.name }}"
+                       data-toggle="tooltip" data-placement="bottom"
+                       title="count: {{ curation.attribute_1.count }} &#10;
+                                quality: {{ curation.attribute_1.count }}" readonly>
             </div>
         </div>
         <div id="{{ 'attribute_2_' + loop.index|string }}" class="attribute-container col-lg-3 badge"
@@ -143,6 +146,10 @@
     //     newElem.html(text);
     // }
 
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    });
+
     function style_curation(elementId) {
         idName = '#' + elementId;
         $(idName).addClass('badge-success');
@@ -153,6 +160,10 @@
         // $(idName).addClass('badge-success');
         radioName = '#radio_' + elementId;
         $(radioName).prop("checked", true);
+    }
+
+    function show_attribute_properties_on_hover() {
+
     }
 
     function submit_curation_success(attribute_1, attribute_2, elementId, radioName, index) {
@@ -213,12 +224,12 @@
                 attribute_1: {name: attribute_1},
                 attribute_2: {name: attribute_2},
                 attribute_curated: '',
-                type: 'DIFFICULT_TO_SAY'
+                type: 'IGNORES'
             }),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function () {
-                style_persisted_curation('DIFFICULT_TO_SAY', index, '');
+                style_persisted_curation('IGNORES', index, '');
             },
             error: function (request, status, error) {
                 alert("Something went wrong." + status + " " + error)
@@ -227,8 +238,8 @@
     }
 
 
-    function style_persisted_curation(curationType, loopIndex, curatedAttribute) {
-        if ("SAME_AS" === curationType) {
+    function style_persisted_curation(relationshipType, loopIndex, curatedAttribute) {
+        if ("SAME_AS" === relationshipType) {
             $('#input_radio_attribute_1_' + loopIndex).css({"background-color": ""});
             $('#input_radio_attribute_2_' + loopIndex).css({"background-color": ""});
             $('#input_radio_attribute_3_' + loopIndex).css({"background-color": ""});
@@ -242,11 +253,11 @@
             }
 
             $('#input_radio_attribute_' + curationIndex + '_' + loopIndex).css({"background-color": "#8ad48a"});
-        } else if ("DIFFERENT_FROM" === curationType) {
+        } else if ("DIFFERENT_FROM" === relationshipType) {
             $('#input_radio_attribute_1_' + loopIndex).css({"background-color": "#efb9b9"});
             $('#input_radio_attribute_2_' + loopIndex).css({"background-color": "#efb9b9"});
             $('#input_radio_attribute_3_' + loopIndex).css({"background-color": "#efb9b9"});
-        } else if ("DIFFICULT_TO_SAY" === curationType) {
+        } else if ("IGNORES" === relationshipType) {
             $('#input_radio_attribute_1_' + loopIndex).css({"background-color": "#ecde90"});
             $('#input_radio_attribute_2_' + loopIndex).css({"background-color": "#ecde90"});
             $('#input_radio_attribute_3_' + loopIndex).css({"background-color": "#ecde90"});

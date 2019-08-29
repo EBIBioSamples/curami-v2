@@ -2,7 +2,7 @@ import logging
 
 from flask import session
 from werkzeug.security import generate_password_hash, check_password_hash
-from curami.web import neo4j_connector
+from curami.commons import neo4j_connector
 
 
 def authenticate_user(username, password):
@@ -13,9 +13,9 @@ def authenticate_user(username, password):
 
     if authenticated:
         session[username] = username
-        logging.info('New user logged in {}', username)
+        logging.info('New user logged in %s', username)
     else:
-        logging.warning('Wrong username/password')
+        logging.warning('Invalid username/password %s', username)
 
     return authenticated
 
@@ -25,7 +25,7 @@ def check_user_session(username):
     if username in session:
         session_exists = True
     else:
-        logging.warning("Session does not exist for user {}", username)
+        logging.warning("Session does not exist for user %s", username)
 
     return session_exists
 
