@@ -64,7 +64,7 @@
                        value="{{ curation.attribute_1.name }}"
                        data-toggle="tooltip" data-placement="bottom"
                        title="count: {{ curation.attribute_1.count }} &#10;
-                                quality: {{ curation.attribute_1.count }}" readonly>
+                                quality: {{ curation.attribute_1.quality }}" readonly>
             </div>
         </div>
         <div id="{{ 'attribute_2_' + loop.index|string }}" class="attribute-container col-lg-3 badge"
@@ -80,7 +80,10 @@
                 </div>
                 <input id="{{ 'input_radio_attribute_2_' + loop.index|string }}" type="text" class="form-control"
                        aria-label="Text input with radio button"
-                       value="{{ curation.attribute_2.name }}" readonly>
+                       value="{{ curation.attribute_2.name }}"
+                       data-toggle="tooltip" data-placement="bottom"
+                       title="count: {{ curation.attribute_2.count }} &#10;
+                                quality: {{ curation.attribute_2.quality }}" readonly>
             </div>
 
         </div>

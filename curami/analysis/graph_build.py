@@ -10,7 +10,6 @@ from tqdm import tqdm
 import file_utils
 from curami.commons import neo4j_connector
 
-
 from multiprocessing import pool
 
 
@@ -84,8 +83,6 @@ def build_cooccurance_graph():
         else:
             job_list.append([row["ATTRIBUTE_1"], row["ATTRIBUTE_2"], row["COUNT"], attribute_map, graph])
 
-
-
     print("Finished loading data into neo4j")
 
 
@@ -99,8 +96,14 @@ def persist_relationship(node1_name, node2_name, correlation, attribute_map, gra
 
 def generate_visualisation_formats():
     coexistence_df = pd.read_csv(file_utils.coexistence_probability_file, encoding=file_utils.encoding)
+
+    coexistence_df_head = coexistence_df.head(100000)
+    # coexistence_df_head = coexistence_df.head(100000).filter(like='', axis=0)
+    coexistence_df_head = coexistence_df_head[~coexistence_df_head["ATTRIBUTE_1"].str.contains("vioscreen")]
+    coexistence_df_head = coexistence_df_head[~coexistence_df_head["ATTRIBUTE_2"].str.contains("vioscreen")]
+
     graph = nx.Graph()
-    graph = nx.from_pandas_edgelist(coexistence_df.head(100000),
+    graph = nx.from_pandas_edgelist(coexistence_df_head,
                                     source="ATTRIBUTE_1", target="ATTRIBUTE_2",
                                     edge_attr=["COEXISTENCE_COUNT", "DIFF_WEIGHT", "DIFF_COEXISTENCE_ABS"])
 

@@ -10,8 +10,10 @@ cycler==0.10.0
 idna==2.8
 kiwisolver==1.0.1
 matplotlib==3.0.2
-neo4j==1.7.4
-neobolt==1.7.13
+# neo4j==1.7.4
+# neobolt==1.7.4
+neo4j==4.0.0.
+neobolt==1.7.17
 neotime==1.7.4
 nltk==3.4
 numpy==1.16.1

@@ -117,6 +117,26 @@ def plot_attribute_count_bar_first_final_steps():
     plt.show()
 
 
+def plot_attribute_count_bar():
+    sns.set(style="whitegrid")
+
+    pd_unique_attributes = pd.read_csv(file_utils.unique_attributes_file, encoding="utf-8")
+    pd_unique_attributes_clean = pd.read_csv(file_utils.unique_attributes_file_final, encoding="utf-8")
+
+    plt.figure(figsize=(18, 10))
+    b = sns.barplot(pd_unique_attributes_clean["ATTRIBUTE"][0:100], pd_unique_attributes_clean["COUNT"][0:100]/1000000)
+    b.axes.set_title("Attribute Count", fontsize=30)
+    b.set_xlabel("Attribute (first 100)", fontsize=18)
+    b.set_ylabel("Count in  millions", fontsize=18)
+    b.tick_params(labelsize=7)
+    b.set_xticklabels(b.get_xticklabels(), rotation=40, ha="right", fontsize=8)
+    plt.tight_layout()
+    plt.savefig(file_utils.results_directory + "attribute_count_bar.png")
+
+    plt.show()
+
+
+
 def plot_attribute_count_table():
     pd_unique_attributes = pd.read_csv(file_utils.unique_attributes_file, encoding="utf-8")
     pd_unique_attributes_clean = pd.read_csv(file_utils.unique_attributes_file_final, encoding="utf-8")
@@ -149,10 +169,12 @@ def plot_attribute_count_table():
 
 
 def main(*args):
-    print_summary_statistics()
-    plot_attribute_count_bar_all_steps()
-    plot_attribute_count_bar_first_final_steps()
-    plot_attribute_count_table()
+    # print_summary_statistics()
+    # plot_attribute_count_bar_all_steps()
+    # plot_attribute_count_bar_first_final_steps()
+    # plot_attribute_count_table()
+
+    plot_attribute_count_bar()
 
 
 if __name__ == "__main__":

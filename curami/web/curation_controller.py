@@ -75,5 +75,3 @@ def handle_invalid_messages(error):
 # with app.test_request_context():
 #     print(url_for('login'))
 #     print(url_for('static', filename='styles.css'))
-
-

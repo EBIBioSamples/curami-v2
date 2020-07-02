@@ -11,7 +11,7 @@ def main(*args):
     transform.preprocess()
     clean.preprocess()
     integrate.integrate()
-    select.select()
+    # select features
 
 
 if __name__ == "__main__":

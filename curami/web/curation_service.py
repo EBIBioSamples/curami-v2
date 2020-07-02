@@ -5,6 +5,11 @@ from curami.commons import neo4j_connector
 from curami.commons.models import RelationshipType, Attribute
 
 
+class CurationService:
+    def __init__(self, db_connection):
+        self.db_connection = db_connection
+
+
 def get_curations(page, size, user):
     logging.info("Get curations page=%d, size=%d, user=%s", page, size, user)
     curations = neo4j_connector.get_suggested_curations(page, size, user)
@@ -41,6 +46,15 @@ def save_curation(curation, user):
         raise helper_service.InvalidMessage("Invalid curation type: " + curation['type'], 400)
 
 
+def save_curation_v2(curation_request, user):
+    logging.info("Save curation user={}, curation={}", user, curation_request)
+    attributes = curation_request['attributes']
+    curations = curation_request['curations']
+
+    for curation in curations:
+        if curation['type'] == 'manual':
+            print('hello')
+        # add link, apply scores
 
 # curation = {}
 # curation['attribute_1'] = {}

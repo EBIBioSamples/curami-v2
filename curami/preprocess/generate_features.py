@@ -34,4 +34,30 @@ def generate_features_file(from_file_no, to_file_no):
         pd_data_list.to_csv(output, index=False, encoding="utf-8", float_format='%.0f')
 
 
-generate_features_file(1, 1)
+def generate_feature_files_from_values(from_file_no, to_file_no):
+    pd_unique_values = pd.read_csv(file_utils.unique_values_file)
+    columns = pd_unique_values["VALUE"][0:1000].tolist()
+    column_set = set(columns)
+    data_list = []
+
+    for i in range(from_file_no, to_file_no + 1):
+        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, 'r') as data_file:
+            sample_list = json.load(data_file)
+
+            for sample in sample_list:
+                attribute_values = sample['characteristics']
+                data_map = {}
+                for key, value in attribute_values.items():
+                    value_text = value[0]['text']
+                    if value_text in column_set:
+                        data_map[value_text] = int(1)
+
+                data_list.append(data_map)
+
+        pd_data_list = pd.DataFrame(data_list)
+        with open("values_data_file.csv", 'w') as output:
+            pd_data_list.to_csv(output, index=False, float_format='%.0f')
+
+
+# generate_features_file(1, 1)
+generate_feature_files_from_values(1, 1)

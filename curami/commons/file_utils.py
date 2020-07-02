@@ -3,6 +3,7 @@ import os
 
 data_directory = "../../data/raw/"
 combined_data_directory = "../../data/combined/"
+data_sample_directory = "../../data/sample/"
 intermediate_data_directory = "../../data/intermediate/"
 results_directory = "../../data/results/"
 intermediate_simple_directory = intermediate_data_directory + "simple/"
@@ -23,8 +24,11 @@ unique_attributes_file_final_diff_all = intermediate_clean_directory + "unique_a
 coexistence_file_final = intermediate_clean_directory + "coexistence.csv"
 
 matched_attributes_file = intermediate_data_directory + "matched_attributes.csv"
-
+matched_synonym_attributes_file = intermediate_data_directory + "matched_synonym_attributes.csv"
 dictionary_matched_attribute_file = results_directory + "dictionary_matched.csv"
+word_base_matched_attribute_file = results_directory + "word_base_matched.csv"
+value_matched_attribute_file = results_directory + "value_matched.csv"
+
 coexistence_probability_file = results_directory + "coexistence_probability.csv"
 curation_rules_file = results_directory + "curation_rules.csv"
 clustered_samples_file = results_directory + "clustered_samples.csv"

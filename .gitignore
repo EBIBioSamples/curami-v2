@@ -6,3 +6,4 @@ venv/
 **/curami.egg-info/*
 *dist/*
 generate_curation_rules.py
+.env*

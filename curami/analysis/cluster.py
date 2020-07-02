@@ -16,6 +16,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
 import plotly.express as px
+from plotly.offline import plot
 
 from curami.commons import file_utils
 
@@ -23,6 +24,17 @@ sample_count_string = "total samples"
 av_count_string = "total attributes"
 unique_attribute_count_string = "unique attribute count"
 unique_value_count_string = "unique value count"
+
+
+def main(*args):
+    # plot_correlation_heatmap()
+    # cluster()
+    # clustering_dbscan()
+    # pca_plot_test()
+    # mca_plot_test()
+    # extract_plot_test()
+    extract_cluster_plot()
+    # hierarchical_clustering()
 
 
 def plot_correlation_heatmap():
@@ -191,7 +203,8 @@ def extract_plot_test():
 
 
 def extract_cluster_plot():
-    pd_unique_attributes = pd.read_csv(file_utils.all_data_file, encoding="utf-8").sample(50000)
+    # pd_unique_attributes = pd.read_csv(file_utils.all_data_file, encoding="utf-8").sample(500000)
+    pd_unique_attributes = pd.read_csv(file_utils.all_data_file, encoding="utf-8")
 
     print(pd_unique_attributes.describe())
     print(pd_unique_attributes.dtypes)
@@ -250,6 +263,7 @@ def extract_cluster_plot():
     #     paper_bgcolor="LightSteelBlue",
     # )
 
+    # plot(fig, filename='temp-plot.html')
     fig.show()
 
 
@@ -265,7 +279,7 @@ def hierarchical_clustering():
     # create dendrogram
     dendrogram = sch.dendrogram(sch.linkage(pd_unique_attributes, method='ward'))
     # create clusters
-    hc = AgglomerativeClustering(n_clusters=12, affinity='euclidean', linkage='ward')
+    hc = AgglomerativeClustering(n_clusters=2, affinity='euclidean', linkage='ward')
     # save clusters for chart
     labels = hc.fit_predict(pd_unique_attributes)
 
@@ -294,17 +308,6 @@ def extract_features(data, no_of_features):
 
 def cluster_data(data, no_of_features):
     print("Extracting features")
-
-
-def main(*args):
-    # plot_correlation_heatmap()
-    # cluster()
-    # clustering_dbscan()
-    # pca_plot_test()
-    # mca_plot_test()
-    # extract_plot_test()
-    extract_cluster_plot()
-    # hierarchical_clustering()
 
 if __name__ == "__main__":
     main(*sys.argv[1:])

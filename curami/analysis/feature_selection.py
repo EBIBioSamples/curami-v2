@@ -1,5 +1,6 @@
 import sys
 import json
+import random
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,7 +8,7 @@ from sklearn.cluster import KMeans
 from tqdm import tqdm
 from sklearn.decomposition import PCA
 
-#plotly imports
+# plotly imports
 import plotly as py
 import plotly.graph_objs as go
 from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
@@ -83,9 +84,9 @@ def cluster():
 
     plot(fig)
 
-
     print(kmeans.labels_)
     print(kmeans.cluster_centers_)
+
 
 def draw_summary():
     print("Generating summary graphs...")
@@ -108,8 +109,35 @@ def draw_summary():
     plt.show()
 
 
+# data_sample_directory
+# extract samples from dataset (dataset contains 100 files, we will extract 5K points from each file)
+def extract_sample_dataset(sample_size, from_file_no, to_file_no):
+    sample_per_file = int(sample_size / (to_file_no + 1 - from_file_no))
+    data_list = []
+    file_count = 0
+    for i in tqdm(range(from_file_no, to_file_no + 1)):
+        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+            sample_list = json.load(data_file)
+            random_indices = random.sample(range(1, 99999), sample_per_file)
+            random_sample_of_sample_list = [sample_list[i] for i in random_indices]
+            data_list += random_sample_of_sample_list
+
+        if (i + 1) % 20 == 0:
+            write_to_file(data_list, file_count)
+            data_list = []
+            file_count += 1
+
+    write_to_file(data_list, file_count)
+
+
+def write_to_file(data_list, file_name):
+    with open(file_utils.data_sample_directory + str(file_name) + file_utils.data_extension, "w") as output:
+        output.write(json.dumps(data_list, indent=4))
+
+
 def generate_all_data_file(from_file_no, to_file_no):
     clean_attribute_map = {}
+    clean_attribute_map['NA'] = 'na'
     attribute_clenup_df = pd.read_csv(file_utils.unique_attributes_file_final_diff_all, encoding=file_utils.encoding)
     for index, row in attribute_clenup_df.iterrows():
         for i, x in enumerate(row):
@@ -117,12 +145,12 @@ def generate_all_data_file(from_file_no, to_file_no):
                 clean_attribute_map[x] = row[0]
 
     pd_unique_attributes = pd.read_csv(file_utils.unique_attributes_file_final)
-    columns = pd_unique_attributes["ATTRIBUTE"][0:100].tolist()
+    columns = pd_unique_attributes["ATTRIBUTE"][0:200].tolist()
     columns_set = set(columns)
 
     data_list = []
     for i in tqdm(range(from_file_no, to_file_no + 1)):
-        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+        with open(file_utils.data_sample_directory + str(i) + file_utils.data_extension, "r") as data_file:
             sample_list = json.load(data_file)
 
         for sample in sample_list:
@@ -135,6 +163,7 @@ def generate_all_data_file(from_file_no, to_file_no):
 
             data_list.append(data_map)
 
+    columns.append("accession")
     pd_data_list = pd.DataFrame(data_list, columns=columns)
     pd_data_list.fillna(int(0), inplace=True)
 
@@ -143,8 +172,9 @@ def generate_all_data_file(from_file_no, to_file_no):
 
 
 def main(*args):
-    # generate_all_data_file(1, 3)
-    cluster()
+    # extract_sample_dataset(500000, 0, 99)
+    generate_all_data_file(0, 4)
+    # cluster()
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ from curami.commons import file_utils
 from curami.commons import set_encoder
 
 ''' Transform collected data
-Data collected are transformed into formats that are easier to analyze.
+transform data into formats that are easier to analyze.
 This process generate following files
 - attribute value file
 - unique attribute file

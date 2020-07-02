@@ -16,3 +16,11 @@ services:
       NEO4J_AUTH: neo4j/neo5j
     volumes:
       - ./neo4j/data:/data
+#default docker-compose network conflicts IPs with EBI intranet
+#enable this if you're on Linux and you can't access internal services while docker is running
+#networks:
+#  default:
+#    ipam:
+#      config:
+#      - subnet: 172.29.0.0/16
+
