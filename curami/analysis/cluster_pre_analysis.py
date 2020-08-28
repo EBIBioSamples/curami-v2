@@ -6,7 +6,7 @@ values_count_map = {}
 attribute_value_count = {}
 
 
-def get_attribute_value_types(attribute):
+def list_values_for_attribute(attribute):
     with open(file_utils.attribute_values_file, 'r') as input_file:
         attribute_values = json.load(input_file)
         print(len(attribute_values[attribute]))
@@ -21,10 +21,10 @@ def get_attribute_value_types(attribute):
     del pd_unique_values
 
     pd_attribute_value_count = pd.DataFrame(list(attribute_value_count.items()), columns=["ATTRIBUTE_VALUE", "COUNT"])
-    pd_attribute_value_count.to_csv("../../data/results/" + attribute.lower().replace(" ", "_") + ".csv", index=False)
+    pd_attribute_value_count.to_csv("../../data/results/attribute_values/" + attribute.lower().replace(" ", "_") + ".csv", index=False)
 
 
-def get_attribute_value_types_1(attribute_list):
+def list_values_for_attributes(attribute_list):
     attribute_value_count_dic = {}
     attribute_value_set_dic = {}
     with open(file_utils.attribute_values_file, 'r') as input_file:
@@ -45,7 +45,7 @@ def get_attribute_value_types_1(attribute_list):
 
     for attr in attribute_list:
         pd_attribute_value_count = pd.DataFrame(list(attribute_value_count_dic[attr].items()), columns=["ATTRIBUTE_VALUE", "COUNT"])
-        pd_attribute_value_count.to_csv("../../data/results/" + attr.lower().replace(" ", "_") + ".csv", index=False)
+        pd_attribute_value_count.to_csv("../../data/results/attribute_values/" + attr.lower().replace(" ", "_") + ".csv", index=False)
 
 
 def main():
@@ -69,7 +69,7 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    # get_attribute_value_types('study name')
-    get_attribute_value_types_1(['study design', 'submitter handle', 'biospecimen repository', 'geographic location', 'ENA checklist'])
+    # list_values_for_attribute('organism part')
+    list_values_for_attributes(['sex', 'gender'])
     # get_attribute_value_types('NCBI submission package')
 

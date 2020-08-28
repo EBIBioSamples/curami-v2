@@ -135,10 +135,22 @@ def build_attribute_map():
     return attribute_map
 
 
+def generate_visualisation_formats_1():
+    coexistence_df = pd.read_csv(file_utils.coexistence_probability_file, encoding=file_utils.encoding)
+
+    # coexistence_df_head = coexistence_df.head(100000)
+    # # coexistence_df_head = coexistence_df.head(100000).filter(like='', axis=0)
+    # coexistence_df_head = coexistence_df_head[~coexistence_df_head["ATTRIBUTE_1"].str.contains("vioscreen")]
+    # coexistence_df_head = coexistence_df_head[~coexistence_df_head["ATTRIBUTE_2"].str.contains("vioscreen")]
+
+    coexistence_df_row = coexistence_df[(coexistence_df["ATTRIBUTE_1"] == "altitude") & (coexistence_df["ATTRIBUTE_2"] == "latitude")]
+    print(coexistence_df_row)
+
+
 def main(*args):
     # build_cooccurance_graph()
-    build_curation_graph()
-    # generate_visualisation_formats()
+    # build_curation_graph()
+    generate_visualisation_formats_1()
 
 
 if __name__ == "__main__":
