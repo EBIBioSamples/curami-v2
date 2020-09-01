@@ -149,8 +149,8 @@ def generate_visualisation_formats_1():
 
 def main(*args):
     # build_cooccurance_graph()
-    # build_curation_graph()
-    generate_visualisation_formats_1()
+    build_curation_graph()
+    # generate_visualisation_formats_1()
 
 
 if __name__ == "__main__":

@@ -11,50 +11,28 @@ class CurationService:
 
 
 def get_curations(page, size, user):
+    neo4j_conn = neo4j_connector.Neo4jConnector()
     logging.info("Get curations page=%d, size=%d, user=%s", page, size, user)
-    curations = neo4j_connector.get_suggested_curations(page, size, user)
+    curations = neo4j_conn.get_suggested_curations(page, size, user)
     return curations
 
 
 def save_curation(curation, user):
-    logging.info("Save curation user={}, curation={}", user, curation)
+    logging.info("Save curation user=%s, curation=%s", user, curation)
     attribute_1 = curation['attribute_1']['name']
     attribute_2 = curation['attribute_2']['name']
     attribute_curated = curation['attribute_curated']
 
+    neo4j_conn = neo4j_connector.Neo4jConnector()
     if RelationshipType.SAME_AS.name == curation['type']:
-        neo4j_connector.add_curation(attribute_1, attribute_2, attribute_curated, user)
-
-        if attribute_1 == attribute_curated:
-            neo4j_connector.update_attribute_quality(attribute_1, 0.25)
-            neo4j_connector.update_attribute_quality(attribute_2, -0.25)
-        elif attribute_2 == attribute_curated:
-            neo4j_connector.update_attribute_quality(attribute_1, -0.25)
-            neo4j_connector.update_attribute_quality(attribute_2, 0.25)
-        else:
-            attribute = Attribute(attribute_curated)
-            attribute.quality = 0.25
-            neo4j_connector.create_attribute(attribute)
-            neo4j_connector.add_curation(attribute_1, attribute_curated, attribute_curated, user)
-            neo4j_connector.add_curation(attribute_2, attribute_curated, attribute_curated, user)
-
+        neo4j_conn.add_curation(attribute_1, attribute_2, attribute_curated, user)
     elif RelationshipType.DIFFERENT_FROM.name == curation['type']:
-        neo4j_connector.reject_curation(attribute_1, attribute_2, user)
-    elif RelationshipType.IGNORES.name == curation['type']:
-        neo4j_connector.ignore_curation(attribute_1, attribute_2, user)
+        neo4j_conn.reject_curation(attribute_1, attribute_2, user)
+    # elif RelationshipType.IGNORES.name == curation['type']:
+    #     neo4j_connector.ignore_curation(attribute_1, attribute_2, user)
     else:
         raise helper_service.InvalidMessage("Invalid curation type: " + curation['type'], 400)
 
-
-def save_curation_v2(curation_request, user):
-    logging.info("Save curation user={}, curation={}", user, curation_request)
-    attributes = curation_request['attributes']
-    curations = curation_request['curations']
-
-    for curation in curations:
-        if curation['type'] == 'manual':
-            print('hello')
-        # add link, apply scores
 
 # curation = {}
 # curation['attribute_1'] = {}

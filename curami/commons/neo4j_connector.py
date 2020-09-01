@@ -1,10 +1,10 @@
-import logging
-import math
+from neo4j import GraphDatabase
 
 from py2neo import Graph, NodeMatcher, RelationshipMatch, Node
 import pandas as pd
 
 from curami.commons.models import Curation, RelationshipType
+from config_params import NEO4J_URL, NEO4J_USERNAME, NEO4J_PASSWORD
 
 # db_url = 'bolt://neo4j:7687'
 db_url = "bolt://localhost:7687"
@@ -13,196 +13,166 @@ userName = "neo4j"
 password = "neo5j"
 
 
-def get_attribute_relationships(page, size):
-    relationships = []
-    graph = connect_to_graph()
+class Neo4jConnector:
+    def __init__(self):
+        self.driver = GraphDatabase.driver(NEO4J_URL, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
 
-    rel_match = RelationshipMatch(graph, r_type='cooccurs_with', skip=page*size, limit=size).order_by("_.correlation")
-    for relation in rel_match.__iter__():
-        curation = Curation(relation.nodes[0]['attribute'], relation.nodes[1]['attribute'])
-        relationships.append(curation)
+    def get_user(self, username):
+        user_password = ''
+        with self.driver.session() as session:
+            results = session.run("MATCH (a:User { username: $username }) RETURN a.password", username=username)
+            user_password = results.single()["a.password"]
+        return user_password
 
-    return relationships
+    def create_user(self, username, password_hash):
+        with self.driver.session() as session:
+            results = session.run("CREATE (a:User{ username: $username, password: $password }) RETURN a",
+                                  username=username, password=password_hash)
 
+        return results.single()
 
-def get_suggested_curations(page, size, user):
-    curations = []
-    graph = connect_to_graph()
-    results = graph.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) RETURN r "
-                        "ORDER BY r.confidence DESC SKIP " + str((page-1)*size) + " LIMIT " + str(size))
+    def get_suggested_curations(self, page, size, user):
+        with self.driver.session() as session:
+            results = session.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) RETURN COUNT(r) as total_count")
+            for result in results:
+                total_records = result["total_count"]
 
-    for relation in results:
-        attribute_1 = relation['r'].start_node['name']
-        attribute_2 = relation['r'].end_node['name']
-        curation = Curation(attribute_1, attribute_2)
+        results = session.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) " +
+                              "RETURN r.owner as owner, r.score as score, r.class as class, TYPE(r) as type, " +
+                              "a.name as attribute_name, a.count as attribute_count, "
+                              "a.quality as attribute_quality, " +
+                              "b.name as curation_name, b.count as curation_count, b.quality as curation_quality " +
+                              "ORDER BY attribute_count DESC SKIP $skip LIMIT $limit", skip=page * size,
+                              limit=size)
 
-        curation.attribute_1.count = relation['r'].start_node['count']
-        curation.attribute_1.quality = relation['r'].start_node['quality']
-        curation.attribute_2.count = relation['r'].end_node['count']
-        curation.attribute_2.quality = relation['r'].end_node['quality']
+        curations = []
+        for result in results:
+            attribute_1 = result["attribute_name"]
+            attribute_2 = result["curation_name"]
+            curation = Curation(attribute_1, attribute_2)
 
-        rel_type, attribute_curated = get_manual_curations(attribute_1, attribute_2, user)
-        if rel_type is not None:
-            curation.attribute_curated = attribute_curated
-            curation.type = rel_type
+            curation.attribute_1.count = result["attribute_count"]
+            curation.attribute_1.quality = result["attribute_quality"]
+            curation.attribute_2.count = result["curation_count"]
+            curation.attribute_2.quality = result["curation_quality"]
 
-        curations.append(curation)
+            rel_type, attribute_curated = self.get_manual_curations(attribute_1, attribute_2, user)
+            if rel_type is not None:
+                curation.attribute_curated = attribute_curated
+                curation.type = rel_type
 
-    return curations
+            curations.append(curation)
 
+        return curations
 
-def get_manual_curations_all():
-    graph = connect_to_graph()
-    results = graph.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) "
-                        "WHERE (a)-[:SAME_AS|:IGNORES|:DIFFERENT_FROM]-() "
-                        "OR (b)-[:SAME_AS|:IGNORES|:DIFFERENT_FROM]-() RETURN r")
+    def get_manual_curations(self, attribute_1, attribute_2, user):
+        attribute_names = [attribute_1, attribute_2]
+        with self.driver.session() as session:
+            results = session.run(
+                "MATCH (a:Attribute)-[r]->(b:Attribute) WHERE a.name in $attributes AND r.owner = $owner " +
+                "RETURN a.name AS attribute_name, b.name as curation_name, r.owner AS owner, r.score as score, r.class as class, TYPE(r) as type",
+                owner=user, attributes=attribute_names)
 
-    curation_map = {}
+            curated_name_count = 0
+            curated_name = ''
+            for result in results:
+                if result["type"] == RelationshipType.SAME_AS.name:
+                    if curated_name_count == 0:
+                        curated_name = result["curation_name"]
+                        curated_name_count += 1
+                        if curated_name == attribute_1 or curated_name == attribute_2:
+                            return result["type"], curated_name
+                    elif curated_name_count == 1 and curated_name == result["curation_name"]:
+                        return result["type"], curated_name
+                elif result["type"] == RelationshipType.DIFFERENT_FROM.name:
+                    if result["attribute_name"] in attribute_names and result["curation_name"] in attribute_names:
+                        return result["type"], curated_name
 
-    for relation in results:
-        attribute_1 = relation['r'].start_node['name']
-        attribute_2 = relation['r'].end_node['name']
-        if attribute_2 not in curation_map:
-            curation_map[attribute_2] = {"attribute": attribute_2, "suggested": attribute_1}
+        return None, None
 
-        node_relationships = graph.run("MATCH (a:Attribute {name: '" + attribute_2 + "'})-[r]-(b) RETURN r")
-        for r in node_relationships:
-            r_type = type(r['r']).__name__
+    def add_curation(self, attribute_1, attribute_2, attribute_curated, user):
+        with self.driver.session() as session:
+            # delete SAME_AS manual outgoing relationship for user for two attributes
+            session.run(
+                "MATCH (a:Attribute)-[r:SAME_AS]->(b:Attribute) WHERE a.name IN $attributes AND r.owner = $user " +
+                "DELETE r", attributes=[attribute_1, attribute_2], user=user)
+            session.run(
+                "MATCH (a:Attribute)-[r:DIFFERENT_FROM]->(b:Attribute) WHERE a.name = $attribute_1 "
+                "AND b.name = $attribute_2 AND r.owner = $user " +
+                "DELETE r", attribute_1=attribute_1, attribute_2=attribute_2, user=user)
 
-            if r_type == RelationshipType.SAME_AS.name:
-                curation_map[attribute_2][r['r']['owner']] = r['r']['attribute']
-            # elif r_type == RelationshipType.LOOKS_SIMILAR.name:
-            #     curation_map[attribute_2][r['r']['owner']] = r['r']['attribute']
+            # create new manual relationship
+            if attribute_curated == attribute_1:
+                session.run(
+                    "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute AND b.name = $curation " +
+                    "CREATE (a)-[r:SAME_AS {class: 'HUMAN', owner: $user, confidence: $score}]->(b)",
+                    attribute=attribute_2, curation=attribute_curated, user=user, score=0.8)
+                session.run("MATCH (a:Attribute {name: $attribute}) SET a.quality = a.quality + $score RETURN a",
+                            attribute=attribute_1, score=0.25)
+            elif attribute_curated == attribute_2:
+                session.run(
+                    "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute AND b.name = $curation " +
+                    "CREATE (a)-[r:SAME_AS {class: 'HUMAN', owner: $user, confidence: $score}]->(b)",
+                    attribute=attribute_1, curation=attribute_curated, user=user, score=0.8)
+                session.run("MATCH (a:Attribute {name: $attribute}) SET a.quality = a.quality + $score RETURN a",
+                            attribute=attribute_2, score=0.25)
+            else:
+                session.run("MERGE (a:Attribute { name: $curation, quality: 1, count: 0})",
+                                      curation=attribute_curated)
+                session.run(
+                    "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute AND b.name = $curation " +
+                    "CREATE (a)-[r:SAME_AS {class: 'HUMAN', owner: $user, confidence: $score}]->(b)",
+                    attribute=attribute_1, curation=attribute_curated, user=user, score=0.8)
+                session.run(
+                    "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute AND b.name = $curation " +
+                    "CREATE (a)-[r:SAME_AS {class: 'HUMAN', owner: $user, confidence: $score}]->(b)",
+                    attribute=attribute_2, curation=attribute_curated, user=user, score=0.8)
 
+    def reject_curation(self, attribute_1, attribute_2, user):
+        with self.driver.session() as session:
+            # delete any manual relationship between two attributes for the user
+            session.run(
+                "MATCH (a:Attribute)-[r]-(b:Attribute) WHERE a.name = $attribute_1 AND a.name = $attribute_2 "
+                "AND r.owner = $user " +
+                "DELETE r", attribute_1=attribute_1, attribute_2=attribute_2, user=user)
 
-    # curation_map_filtered = {k: v for k, v in curation_map.items() if v}
-    pd_curations = pd.DataFrame.from_dict(curation_map, orient="index")
-    # pd_curations = pd_curations[(pd_curations['isuru'] == pd_curations['isuru'])][(pd_curations['fuqi'] == pd_curations['fuqi'])]
+            # create relationship
+            session.run(
+                "MATCH (a:Attribute),(b:Attribute) " +
+                "WHERE a.name = $attribute_1 AND b.name = $attribute_2 "
+                "CREATE (a)-[r:DIFFERENT_FROM {class: 'HUMAN', owner: $owner, confidence: 1}]->(b)",
+                attribute_1=attribute_1, attribute_2=attribute_2, owner=user)
 
-    pd_curations = pd_curations.dropna()
-    # age at diagnosis (years)
+    def get_manual_curations_all(self):
+        with self.driver.session() as session:
+            results = session.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) "
+                                  "WHERE (a)-[:SAME_AS|:IGNORES|:DIFFERENT_FROM]-() "
+                                  "OR (b)-[:SAME_AS|:IGNORES|:DIFFERENT_FROM]-() "
+                                  "RETURN a.name AS attribute_name, b.name AS curation_name")
 
-    return pd_curations
+            curation_map = {}
+            for result in results:
+                attribute_1 = result["attribute_name"]
+                attribute_2 = result["curation_name"]
+                if attribute_2 not in curation_map:
+                    curation_map[attribute_2] = {"attribute": attribute_2, "suggested": attribute_1}
 
+            node_relationships = session.run("MATCH (a:Attribute {name: $attribute})-[r]->(b) "
+                                             "RETURN TYPE(r) AS rel_type, r.owner AS owner, b.name as curation",
+                                             attribute=attribute_2)
+            for r in node_relationships:
+                r_type = r["rel_type"]
 
-def get_manual_curations(attribute_1, attribute_2, user):
-    relationships = []
-    graph = connect_to_graph()
+                if r_type == RelationshipType.SAME_AS.name:
+                    curation_map[attribute_2][r['owner']] = r['curation']
+                # elif r_type == RelationshipType.LOOKS_SIMILAR.name:
+                #     curation_map[attribute_2][r['owner']] = r['curation']
 
-    results = graph.run('MATCH (a:Attribute {name: "' + attribute_1 + '"})-[r]->'
-                        '(b:Attribute {name: "' + attribute_2 + '"}) WHERE r.owner="' + user + '"  RETURN r')
-
-    for relation in results:
-        if type(results['r']).__name__ in RelationshipType.get_curation_type_names():
-            return type(results['r']).__name__, relation['r']['attribute']
-
-    return None, None
-
-
-# def get_relationships(attribute_1, attribute_2):
-#     relationships = []
-#     # graph = GraphDatabase.driver(db_url, auth=(username, password))
-#     graph = connect_to_graph()
-#
-#     results = graph.run("MATCH (:attribute {attribute: 'sample type'})-[r]-"
-#                         "(:attribute {attribute: 'vioscreen d total'}) RETURN r")
-#     for relation in results:
-#         relationships.append((relation['r']))
-#
-#     return relationships
-#
-#
-# def get_relationships2(attribute_1, attribute_2):
-#     relationships = []
-#     graph = connect_to_graph()
-#
-#     node_1 = Node("attribute", attribute=attribute_1)
-#     node_2 = Node("attribute", attribute=attribute_2)
-#     rel_match = RelationshipMatch(graph, nodes=[node_1, node_2])
-#     for relation in rel_match.__iter__():
-#         relationships.append(relation)
-#
-#     return relationships
-
-
-def add_curation(attribute_1, attribute_2, attribute_curated, user):
-    graph = connect_to_graph()
-
-    delete_created_relationships = 'MATCH (a:Attribute {name: "' + attribute_1 + '"})-[r]->(b:Attribute {name: "' + attribute_2 + '"}) ' \
-                                   'WHERE (a)-[r:SAME_AS {owner : "' + user + '"}]-(b) ' \
-                                        'OR (a)-[r:DIFFERENT_FROM {owner : "' + user + '"}]-(b) ' \
-                                        'OR (a)-[r:IGNORES {owner : "' + user + '"}]-(b) ' \
-                                   'DELETE r'
-
-    create_relationship = 'MATCH (a:Attribute),(b:Attribute) ' \
-                          'WHERE a.name = "' + attribute_1 + '" AND b.name = "' + attribute_2 + '" ' \
-                          'CREATE (a)-[r:SAME_AS {owner: "' + user + '", attribute: "' + attribute_curated + '"}]->(b) ' \
-                          'RETURN type(r)'
-    graph.run(delete_created_relationships)
-    graph.run(create_relationship)
-
-
-def reject_curation(attribute_1, attribute_2, user):
-    logging.info("Rejected")
-    graph = connect_to_graph()
-
-    delete_created_relationships = 'MATCH (a:Attribute {name: "' + attribute_1 + '"})-[r]->(b:Attribute {name: "' + attribute_2 + '"}) ' \
-                                   'WHERE (a)-[r:SAME_AS {owner : "' + user + '"}]-(b) ' \
-                                          'OR (a)-[r:DIFFERENT_FROM {owner : "' + user + '"}]-(b) ' \
-                                          'OR (a)-[r:IGNORES {owner : "' + user + '"}]-(b) ' \
-                                   'DELETE r'
-
-    create_relationship = 'MATCH (a:Attribute),(b:Attribute) ' \
-                          'WHERE a.name = "' + attribute_1 + '" AND b.name = "' + attribute_2 + '" ' \
-                          'CREATE (a)-[r:DIFFERENT_FROM {owner: "' + user + '"}]->(b) ' \
-                          'RETURN type(r)'
-    graph.run(delete_created_relationships)
-    graph.run(create_relationship)
-
-
-def ignore_curation(attribute_1, attribute_2, user):
-    logging.info("Ignored")
-    graph = connect_to_graph()
-
-    delete_created_relationships = 'MATCH (a:Attribute {name: "' + attribute_1 + '"})-[r]->(b:Attribute {name: "' + attribute_2 + '"}) ' \
-                                   'WHERE (a)-[r:SAME_AS {owner : "' + user + '"}]-(b) ' \
-                                          'OR (a)-[r:DIFFERENT_FROM {owner : "' + user + '"}]-(b) ' \
-                                          'OR (a)-[r:IGNORES {owner : "' + user + '"}]-(b) ' \
-                                   'DELETE r'
-
-    create_relationship = 'MATCH (a:Attribute),(b:Attribute) ' \
-                          'WHERE a.name = "' + attribute_1 + '" AND b.name = "' + attribute_2 + '" ' \
-                          'CREATE (a)-[r:IGNORES {owner: "' + user + '"}]->(b) ' \
-                          'RETURN type(r)'
-
-    graph.run(delete_created_relationships)
-    graph.run(create_relationship)
-
-
-def create_attribute(attribute):
-    graph = connect_to_graph()
-    merge_node = "MERGE (a:Attribute {name: '" + attribute.name + "', quality: " + str(attribute.quality) + "}) RETURN a"
-    graph.run(merge_node)
-
-
-def update_attribute_quality(attribute, quality):
-    graph = connect_to_graph()
-    merge_node = "MATCH (n { name: '" + attribute.name + "' }) SET n.quality = n.quality + 0.5 RETURN n"
-    graph.run(merge_node)
-
-
-# authentication
-def create_user(username, password_hash):
-    graph = connect_to_graph()
-    userNode = Node("User", username=username, password=password_hash)
-    graph.create(userNode)
-
-
-def get_user(username):
-    graph = connect_to_graph()
-    node_matcher = NodeMatcher(graph)
-    node = node_matcher.match('User', username=username).first()
-    return node
+        # curation_map_filtered = {k: v for k, v in curation_map.items() if v}
+        pd_curations = pd.DataFrame.from_dict(curation_map, orient="index")
+        # pd_curations = pd_curations[(pd_curations['isuru'] == pd_curations['isuru'])][(pd_curations['fuqi'] == pd_curations['fuqi'])]
+        pd_curations = pd_curations.dropna()
+        return pd_curations
 
 
 def connect_to_graph():
@@ -211,13 +181,7 @@ def connect_to_graph():
 
 
 if __name__ == '__main__':
-    # print(len(get_curations(0, 5)))
-    # print(len(get_relationships2('sample type', 'vioscreen d total')))
-    # usernode = get_user('isuru')
-    # print(usernode)
-    # relations = get_manual_curations('', '', '')
-    # relations = get_suggested_curations(10, 10, '')
-    relations = get_manual_curations_all()
+    neo4j_conn = Neo4jConnector()
+    relations = neo4j_conn.get_manual_curations_all()
     print(relations)
-    # print(html.escape("hello' world"))
 
