@@ -12,6 +12,10 @@ db_url = "bolt://localhost:7687"
 userName = "neo4j"
 password = "neo5j"
 
+# Neo4j 4.0.3
+# neo4j	1.7.4	4.0.0
+# neobolt	1.7.4	1.7.17
+
 
 class Neo4jConnector:
     def __init__(self):
