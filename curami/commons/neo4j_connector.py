@@ -3,7 +3,9 @@ from neo4j import GraphDatabase
 
 from py2neo import Graph, NodeMatcher, RelationshipMatch, Node
 import pandas as pd
+from tqdm import tqdm
 
+from curami.commons import common_utils, file_utils
 from curami.commons.models import Curation, RelationshipType
 from config_params import NEO4J_URL, NEO4J_USERNAME, NEO4J_PASSWORD
 
@@ -146,8 +148,10 @@ class Neo4jConnector:
                 session.run("MATCH (a:Attribute {name: $attribute}) SET a.quality = a.quality + $score RETURN a",
                             attribute=attribute_2, score=0.25)
             else:
-                session.run("MERGE (a:Attribute { name: $curation, quality: 1, count: 0})",
-                            curation=attribute_curated)
+                session.run("MERGE (a:Attribute {name: $curation}) " +
+                            "ON CREATE SET a:Manual, a.quality = 1, a.count = 0 " +
+                            "ON MATCH SET a.quality = a.quality + $score",
+                            curation=attribute_curated, score=0.25)
                 session.run(
                     "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute AND b.name = $curation " +
                     "CREATE (a)-[r:SAME_AS {class: 'HUMAN', owner: $user, confidence: $score}]->(b)",
@@ -203,6 +207,32 @@ class Neo4jConnector:
         pd_curations = pd_curations.dropna()
         return pd_curations
 
+    def build_curation_graph(self, filename, delete):
+        attribute_misspelling_df = pd.read_csv(filename, encoding=file_utils.encoding)
+        print("Loading " + str(len(attribute_misspelling_df)) + " attribute relationships...")
+        attribute_map = common_utils.build_attribute_map()
+        if delete:
+            with self.driver.session() as session:
+                session.run("MATCH (n) DETACH DELETE n")
+
+        with self.driver.session() as session:
+            progress_bar = tqdm(total=len(attribute_misspelling_df), position=0, leave=True)
+            for index, row in tqdm(attribute_misspelling_df.iterrows()):
+                curation_name = row[0]
+                attribute_name = row[1]
+                session.run("MERGE (a:Attribute { name: $attribute, count: $count, quality: $quality })",
+                                      attribute=curation_name, count=attribute_map[curation_name], quality=0)
+                session.run("MERGE (a:Attribute { name: $attribute, count: $count, quality: $quality })",
+                                      attribute=attribute_name, count=attribute_map[attribute_name], quality=0)
+                session.run(
+                    "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute AND b.name = $curation " +
+                    "CREATE (a)-[r:LOOKS_SIMILAR {class: 'MACHINE', owner: 'dictionary', score: $score}]->(b)",
+                    attribute=attribute_name, curation=curation_name, score=0.2)
+
+                progress_bar.update(1)
+
+        print("Finished loading data into neo4j")
+
 
 def connect_to_graph():
     graph = Graph(db_url, user=userName, password=password)
@@ -211,5 +241,6 @@ def connect_to_graph():
 
 if __name__ == '__main__':
     neo4j_conn = Neo4jConnector()
-    relations = neo4j_conn.get_manual_curations_all()
-    print(relations)
+    # relations = neo4j_conn.get_manual_curations_all()
+    # print(relations)
+    neo4j_conn.build_curation_graph(file_utils.dictionary_matched_attribute_file, True)
