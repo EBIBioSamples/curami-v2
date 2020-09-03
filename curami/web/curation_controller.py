@@ -20,6 +20,7 @@ def user_summary():
 @app.route('/curations', methods=['GET', 'POST'])
 def get_curations():
     username = request.cookies.get('username')
+    search_term = request.args.get('text', default="")
     # if username is None:
     #     username = 'guest'
 
@@ -34,8 +35,8 @@ def get_curations():
         if page < 1:
             page = 1
 
-        curations = curation_service.get_curations(page, size, username)
-        return render_template('curate.html', curations=curations, page=page, size=size)
+        curations = curation_service.get_curations(search_term, page, size, username)
+        return render_template('curate.html', curations=curations, page=page, size=size, search_term=search_term)
     elif request.method == 'POST':
         curation_service.save_curation(request.get_json(), username)
         return jsonify(request.get_json())

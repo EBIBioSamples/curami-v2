@@ -9,12 +9,25 @@
     /*flex-grow: 1;*/
 }
 
-.curate-container {
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.curate-container:hover {
     /*display: flex;*/
+    background-color: rgba(71, 130, 226, 0.11);
 }
 
 #attribute-1 {
 
+}
+
+.curation-table-header {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 100%;
+    font-weight: 600;
 }
 
 .highlight {background-color: #B4D5FF}

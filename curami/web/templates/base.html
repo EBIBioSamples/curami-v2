@@ -27,7 +27,15 @@
                 $('#nav-item-summary').addClass('active')
             }
         });
+    </script>
 
+    <script>
+        $(document).ready(function(){
+            $("#searchButton").click(function(){
+                var search_term = $("#searchInput").val();
+                window.location.href = '/curations?text=' + search_term;
+            });
+        });
     </script>
 
     {% block script_block %}{% endblock %}
@@ -39,19 +47,10 @@
                 aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="#">CURAMI</a>
+        <a class="navbar-brand" href="{{ url_for('curation.index') }}">CURAMI</a>
 
         <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
             <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
-                <li id="nav-item-home" class="nav-item">
-                    <a class="nav-link" href="{{ url_for('curation.index') }}">Home</a>
-                </li>
-                <li id="nav-item-profile" class="nav-item">
-                    <a class="nav-link" href="{{ url_for('curation.user_summary') }}">Profile</a>
-                </li>
-                <li id="nav-item-summary" class="nav-item">
-                    <a class="nav-link" href="{{ url_for('curation.show_summary') }}">Summary</a>
-                </li>
                 <li id="nav-item-curate" class="nav-item">
                     <a class="nav-link" href="{{ url_for('curation.get_curations', page=1, size=10) }}">Curate</a>
                 </li>
@@ -60,8 +59,8 @@
                 </li>
             </ul>
             <form class="form-inline my-2 my-lg-0">
-                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-                <button class="btn btn-outline-secondary my-2 my-sm-0" type="submit">Search</button>
+                <input id="searchInput" class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" value="{{ search_term }}">
+                <button id="searchButton" class="btn btn-outline-secondary my-2 my-sm-0" type="button">Search</button>
             </form>
         </div>
     </nav>

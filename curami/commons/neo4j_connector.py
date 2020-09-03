@@ -1,3 +1,4 @@
+import logging
 from neo4j import GraphDatabase
 
 from py2neo import Graph, NodeMatcher, RelationshipMatch, Node
@@ -11,6 +12,7 @@ db_url = "bolt://localhost:7687"
 # db_url = "bolt://scooby.ebi.ac.uk:7687"
 userName = "neo4j"
 password = "neo5j"
+
 
 # Neo4j 4.0.3
 # neo4j	1.7.4	4.0.0
@@ -35,37 +37,44 @@ class Neo4jConnector:
 
         return results.single()
 
-    def get_suggested_curations(self, page, size, user):
+    def get_suggested_curations(self, search_term, page, size, user):
+        search_query = (
+                    "WHERE a.name = '" + search_term + "' OR b.name = '" + search_term + "' ") if search_term else ""
+
         with self.driver.session() as session:
             results = session.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) RETURN COUNT(r) as total_count")
             for result in results:
                 total_records = result["total_count"]
 
-        results = session.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) " +
-                              "RETURN r.owner as owner, r.score as score, r.class as class, TYPE(r) as type, " +
-                              "a.name as attribute_name, a.count as attribute_count, "
-                              "a.quality as attribute_quality, " +
-                              "b.name as curation_name, b.count as curation_count, b.quality as curation_quality " +
-                              "ORDER BY attribute_count DESC SKIP $skip LIMIT $limit", skip=page * size,
-                              limit=size)
+            results = session.run("MATCH(a:Attribute)-[r:LOOKS_SIMILAR]->(b:Attribute) " + search_query +
+                                  "UNWIND [a.count, b.count] AS count " +
+                                  "RETURN r.owner as owner, r.score as score, r.class as class, TYPE(r) as type, " +
+                                  "a.name as attribute_name, a.count as attribute_count, "
+                                  "a.quality as attribute_quality, " +
+                                  "b.name as curation_name, b.count as curation_count, "
+                                  "b.quality as curation_quality, " +
+                                  "min(count) as min_count " +
+                                  "ORDER BY min_count DESC SKIP $skip LIMIT $limit", skip=(page - 1) * size,
+                                  limit=size)
 
-        curations = []
-        for result in results:
-            attribute_1 = result["attribute_name"]
-            attribute_2 = result["curation_name"]
-            curation = Curation(attribute_1, attribute_2)
+            curations = []
+            for result in results:
+                attribute_1 = result["attribute_name"]
+                attribute_2 = result["curation_name"]
+                curation = Curation(attribute_1, attribute_2)
 
-            curation.attribute_1.count = result["attribute_count"]
-            curation.attribute_1.quality = result["attribute_quality"]
-            curation.attribute_2.count = result["curation_count"]
-            curation.attribute_2.quality = result["curation_quality"]
+                curation.attribute_1.count = result["attribute_count"]
+                curation.attribute_1.quality = result["attribute_quality"]
+                curation.attribute_2.count = result["curation_count"]
+                curation.attribute_2.quality = result["curation_quality"]
 
-            rel_type, attribute_curated = self.get_manual_curations(attribute_1, attribute_2, user)
-            if rel_type is not None:
-                curation.attribute_curated = attribute_curated
-                curation.type = rel_type
+                status, rel_type, attribute_curated = self.get_manual_curations(attribute_1, attribute_2, user)
+                if status != 0:
+                    curation.attribute_curated = attribute_curated
+                    curation.type = rel_type
+                    curation.status = status
 
-            curations.append(curation)
+                curations.append(curation)
 
         return curations
 
@@ -77,22 +86,38 @@ class Neo4jConnector:
                 "RETURN a.name AS attribute_name, b.name as curation_name, r.owner AS owner, r.score as score, r.class as class, TYPE(r) as type",
                 owner=user, attributes=attribute_names)
 
-            curated_name_count = 0
+            curation_count = 0
             curated_name = ''
+            status = 0  # 0: no curations, -1: conflicts,  1,2: curations
+            rel_type = None
             for result in results:
                 if result["type"] == RelationshipType.SAME_AS.name:
-                    if curated_name_count == 0:
+                    if curation_count == 0:
                         curated_name = result["curation_name"]
-                        curated_name_count += 1
-                        if curated_name == attribute_1 or curated_name == attribute_2:
-                            return result["type"], curated_name
-                    elif curated_name_count == 1 and curated_name == result["curation_name"]:
-                        return result["type"], curated_name
+                        rel_type = result["type"]
+                        curation_count += 1
+                        if result["attribute_name"] in attribute_names and result["curation_name"] in attribute_names:
+                            status = 1
+                            # return result["type"], curated_name
+                        else:
+                            status = -1
+                    elif curation_count == 1:
+                        curation_count += 1
+                        rel_type = result["type"]
+                        if curated_name == result["curation_name"]:
+                            status = 2
+                            # return result["type"], curated_name
+                        else:
+                            status = -1
+                    else:
+                        logging.error("Invalid status in db: more than one outgoing SAME_AS relationship")
                 elif result["type"] == RelationshipType.DIFFERENT_FROM.name:
                     if result["attribute_name"] in attribute_names and result["curation_name"] in attribute_names:
-                        return result["type"], curated_name
+                        status = 1
+                        rel_type = result["type"]
+                        # return result["type"], curated_name
 
-        return None, None
+        return status, rel_type, curated_name
 
     def add_curation(self, attribute_1, attribute_2, attribute_curated, user):
         with self.driver.session() as session:
@@ -122,7 +147,7 @@ class Neo4jConnector:
                             attribute=attribute_2, score=0.25)
             else:
                 session.run("MERGE (a:Attribute { name: $curation, quality: 1, count: 0})",
-                                      curation=attribute_curated)
+                            curation=attribute_curated)
                 session.run(
                     "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute AND b.name = $curation " +
                     "CREATE (a)-[r:SAME_AS {class: 'HUMAN', owner: $user, confidence: $score}]->(b)",
@@ -188,4 +213,3 @@ if __name__ == '__main__':
     neo4j_conn = Neo4jConnector()
     relations = neo4j_conn.get_manual_curations_all()
     print(relations)
-

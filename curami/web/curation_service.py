@@ -10,10 +10,10 @@ class CurationService:
         self.db_connection = db_connection
 
 
-def get_curations(page, size, user):
+def get_curations(search_term, page, size, user):
     neo4j_conn = neo4j_connector.Neo4jConnector()
     logging.info("Get curations page=%d, size=%d, user=%s", page, size, user)
-    curations = neo4j_conn.get_suggested_curations(page, size, user)
+    curations = neo4j_conn.get_suggested_curations(search_term, page, size, user)
     return curations
 
 

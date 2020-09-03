@@ -44,8 +44,13 @@
     </div>
 </div>
 
-
 <div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-3 curation-table-header">ATTRIBUTE</div>
+        <div class="col-lg-3 curation-table-header">SUGGESTED CURATION</div>
+        <div class="col-lg-4 curation-table-header">OTHER CURATION</div>
+        <div class="col-lg-2 curation-table-header">ACTIONS</div>
+    </div>
     {% for curation in curations %}
     <div class="curate-container row">
         <div id="{{ 'attribute_1_' + loop.index|string }}" class="attribute-container col-lg-3 badge"
@@ -53,13 +58,13 @@
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">
-                        <input id="{{ 'radio_attribute_1_' + loop.index|string }}" type="radio"
+                        <input id="{{ 'radio_attribute_1_' + loop.index|string }}" type="radio" class="cursor-pointer"
                                aria-label="Radio button for following text input"
                                name="{{ 'selectedCuration_' + loop.index|string }}"
                                value="{{ 'input_radio_attribute_1_' + loop.index|string }}">
                     </div>
                 </div>
-                <input id="{{ 'input_radio_attribute_1_' + loop.index|string }}" type="text" class="form-control"
+                <input id="{{ 'input_radio_attribute_1_' + loop.index|string }}" type="text" class="form-control cursor-pointer"
                        aria-label="Text input with radio button"
                        value="{{ curation.attribute_1.name }}"
                        data-toggle="tooltip" data-placement="bottom"
@@ -72,13 +77,13 @@
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">
-                        <input id="{{ 'radio_attribute_2_' + loop.index|string }}" type="radio"
+                        <input id="{{ 'radio_attribute_2_' + loop.index|string }}" type="radio" class="cursor-pointer"
                                aria-label="Radio button for following text input"
                                name="{{ 'selectedCuration_' + loop.index|string }}"
                                value="{{ 'input_radio_attribute_2_' + loop.index|string }}">
                     </div>
                 </div>
-                <input id="{{ 'input_radio_attribute_2_' + loop.index|string }}" type="text" class="form-control"
+                <input id="{{ 'input_radio_attribute_2_' + loop.index|string }}" type="text" class="form-control cursor-pointer"
                        aria-label="Text input with radio button"
                        value="{{ curation.attribute_2.name }}"
                        data-toggle="tooltip" data-placement="bottom"
@@ -92,7 +97,7 @@
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">
-                        <input id="{{ 'radio_attribute_3_' + loop.index|string }}" type="radio"
+                        <input id="{{ 'radio_attribute_3_' + loop.index|string }}" type="radio" class="cursor-pointer"
                                aria-label="Radio button for following text input"
                                name="{{ 'selectedCuration_' + loop.index|string }}"
                                value="{{ 'input_radio_attribute_3_' + loop.index|string }}">
@@ -115,10 +120,10 @@
                     onclick="submit_curation_reject('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">
                 <span class="glyphicon glyphicon-remove"></span> Reject
             </button>
-            <button id="{{ 'attr_input_6_' + loop.index|string }}" type="button" class="btn btn-outline-warning"
-                    onclick="submit_curation_ignore('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">
-                <span class="glyphicon glyphicon-remove"></span> Ignore
-            </button>
+<!--            <button id="{{ 'attr_input_6_' + loop.index|string }}" type="button" class="btn btn-outline-warning"-->
+<!--                    onclick="submit_curation_ignore('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">-->
+<!--                <span class="glyphicon glyphicon-remove"></span> Ignore-->
+<!--            </button>-->
         </div>
     </div>
 
