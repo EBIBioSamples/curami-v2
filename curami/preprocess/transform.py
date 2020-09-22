@@ -14,7 +14,7 @@ This process generate following files
 - unique attribute file
 - unique value file
 - attribute coexistence file
-- all data file (this file is too big and not really useful, therefore commented out)
+- all data file (this file is big, difficult to process and not really useful, therefore commented out)
 '''
 
 
@@ -36,7 +36,7 @@ def generate_attribute_value_files(from_file_no, to_file_no):
     total_samples = 0
 
     for i in tqdm(range(from_file_no, to_file_no + 1)):
-        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+        with open(file_utils.raw_sample_directory + str(i) + file_utils.data_extension, "r") as data_file:
             sample_list = json.load(data_file)
 
         for sample in sample_list:
@@ -89,7 +89,7 @@ def generate_coexistence_file(from_file_no, to_file_no):
     coexistence_map = {}
 
     for i in tqdm(range(from_file_no, to_file_no + 1)):
-        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+        with open(file_utils.raw_sample_directory + str(i) + file_utils.data_extension, "r") as data_file:
             sample_list = json.load(data_file)
 
         for sample in sample_list:
@@ -127,7 +127,7 @@ def generate_all_data_file(from_file_no, to_file_no):
     columns_set = set(columns)
     # data_list = []
     for i in tqdm(range(from_file_no, to_file_no + 1)):
-        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+        with open(file_utils.raw_sample_directory + str(i) + file_utils.data_extension, "r") as data_file:
             sample_list = json.load(data_file)
 
         data_list = []

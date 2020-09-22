@@ -42,7 +42,7 @@ def breakdown_to_smaller_chunks():
 
 def write_to_file(sample_list, file_count):
     logging.info("Writing chunk to file filename: %d", file_count)
-    with open(file_utils.combined_data_directory + str(file_count) + file_utils.data_extension, "w") as output:
+    with open(file_utils.raw_sample_directory + str(file_count) + file_utils.data_extension, "w") as output:
         output.write(json.dumps(sample_list, indent=4))
 
 

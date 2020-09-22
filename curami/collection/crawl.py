@@ -51,7 +51,7 @@ def retrieve_and_save_records(params):
 
     if response.status_code == requests.codes.ok:
         # print(response.url)
-        with open(file_utils.data_directory + str(params["page"]) + ".txt", "w") as output:
+        with open(file_utils.raw_sample_directory_temp + str(params["page"]) + ".txt", "w") as output:
             json_output = response.json()
             output.write(json.dumps(json_output["_embedded"]["samples"], indent=4))
     else:
@@ -74,7 +74,7 @@ def worker_thread():
         else:
             parameter_queue.task_done()
 
-        utils.show_progress(parameter_queue.qsize(), total_records, page_size)
+        utils.show_queue_progress(parameter_queue.qsize(), total_records, page_size)
 
 
 def get_all_samples():
@@ -99,25 +99,28 @@ def get_all_samples():
 
 
 def combine_files(count):
-    file_list = os.listdir(file_utils.data_directory)
+    file_list = os.listdir(file_utils.raw_sample_directory_temp)
     print("Found " + str(len(file_list)) + " files. Aggregating them into " + str(len(file_list) / count) + " files")
     file_count = 0
     sample_list = []
     for i, file_name in enumerate(sorted(file_list)):  # for consistency we will sort, but not exactly expected order,
-        with open(file_utils.data_directory + file_name, "r") as data_file:
+        with open(file_utils.raw_sample_directory_temp + file_name, "r") as data_file:
             sample_sub_list = json.load(data_file)
         if ((i + 1) % count) == 0:
             sample_list = sample_list + sample_sub_list
-            with open(file_utils.combined_data_directory + str(file_count) + file_utils.data_extension, "w") as output:
+            with open(file_utils.raw_sample_directory + str(file_count) + file_utils.data_extension, "w") as output:
                 output.write(json.dumps(sample_list, indent=4))
             sample_list = []
             file_count = file_count + 1
         else:
             sample_list = sample_list + sample_sub_list
 
-        if not sample_list:
-            with open(file_utils.combined_data_directory + str(file_count) + file_utils.data_extension, "w") as output:
-                output.write(json.dumps(sample_list, indent=4))
+    if sample_list:
+        with open(file_utils.raw_sample_directory + str(file_count) + file_utils.data_extension, "w") as output:
+            output.write(json.dumps(sample_list, indent=4))
+
+    print("All smaller files were aggregated into larger files. " +
+          "You can now safely delete " + file_utils.raw_sample_directory_temp + " directory")
 
 
 if __name__ == '__main__':

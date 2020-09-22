@@ -14,7 +14,7 @@ def generate_features_file(from_file_no, to_file_no):
     data_list = []
 
     for i in tqdm(range(from_file_no, to_file_no + 1)):
-        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+        with open(file_utils.raw_sample_directory + str(i) + file_utils.data_extension, "r") as data_file:
             sample_list = json.load(data_file)
 
         for sample in sample_list:
@@ -41,7 +41,7 @@ def generate_feature_files_from_values(from_file_no, to_file_no):
     data_list = []
 
     for i in range(from_file_no, to_file_no + 1):
-        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, 'r') as data_file:
+        with open(file_utils.raw_sample_directory + str(i) + file_utils.data_extension, 'r') as data_file:
             sample_list = json.load(data_file)
 
             for sample in sample_list:
