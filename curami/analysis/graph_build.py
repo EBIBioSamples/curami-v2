@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 from py2neo import Node, Relationship
-from neo4j import GraphDatabase
 from tqdm import tqdm
 
 import file_utils
@@ -14,25 +13,8 @@ from multiprocessing import pool
 
 
 def build_curation_graph():
-    attribute_misspelling_df = pd.read_csv(file_utils.dictionary_matched_attribute_file, encoding=file_utils.encoding)
-
-    graph = neo4j_connector.connect_to_graph()
-    graph.delete_all()
-
-    attribute_map = build_attribute_map()
-
-    for index, row in attribute_misspelling_df.iterrows():
-        node1_name = row[0]
-        node2_name = row[1]
-        probability = row[2]
-
-        node1 = Node("Attribute", name=node1_name, count=attribute_map[node1_name], quality=0)
-        node2 = Node("Attribute", count=attribute_map[node2_name], name=node2_name, quality=0)
-        node1_node2 = Relationship(node1, "LOOKS_SIMILAR", node2, confidence=probability, owner='machine')  # add owner
-
-        graph.merge(node1_node2, "name", "name")
-
-    print("Finished loading data into neo4j")
+    neo4j_conn = neo4j_connector.Neo4jConnector()
+    neo4j_conn.build_curation_graph(file_utils.dictionary_matched_attribute_file, True)
 
 
 def build_cooccurance_graph2():
@@ -149,8 +131,8 @@ def generate_visualisation_formats_1():
 
 def main(*args):
     # build_cooccurance_graph()
-    # build_curation_graph()
-    generate_visualisation_formats_1()
+    build_curation_graph()
+    # generate_visualisation_formats_1()
 
 
 if __name__ == "__main__":

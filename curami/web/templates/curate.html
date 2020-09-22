@@ -44,22 +44,28 @@
     </div>
 </div>
 
-
 <div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-3 curation-table-header">ATTRIBUTE</div>
+        <div class="col-lg-3 curation-table-header">SUGGESTED CURATION</div>
+        <div class="col-lg-4 curation-table-header">OTHER CURATION</div>
+        <div class="col-lg-2 curation-table-header">ACTIONS</div>
+    </div>
     {% for curation in curations %}
+    <div id="dialog-confirm"></div>
     <div class="curate-container row">
         <div id="{{ 'attribute_1_' + loop.index|string }}" class="attribute-container col-lg-3 badge"
              onclick="select_curation_object(this.id, '{{ loop.index|string }}')">
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">
-                        <input id="{{ 'radio_attribute_1_' + loop.index|string }}" type="radio"
+                        <input id="{{ 'radio_attribute_1_' + loop.index|string }}" type="radio" class="cursor-pointer"
                                aria-label="Radio button for following text input"
                                name="{{ 'selectedCuration_' + loop.index|string }}"
                                value="{{ 'input_radio_attribute_1_' + loop.index|string }}">
                     </div>
                 </div>
-                <input id="{{ 'input_radio_attribute_1_' + loop.index|string }}" type="text" class="form-control"
+                <input id="{{ 'input_radio_attribute_1_' + loop.index|string }}" type="text" class="form-control cursor-pointer"
                        aria-label="Text input with radio button"
                        value="{{ curation.attribute_1.name }}"
                        data-toggle="tooltip" data-placement="bottom"
@@ -72,13 +78,13 @@
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">
-                        <input id="{{ 'radio_attribute_2_' + loop.index|string }}" type="radio"
+                        <input id="{{ 'radio_attribute_2_' + loop.index|string }}" type="radio" class="cursor-pointer"
                                aria-label="Radio button for following text input"
                                name="{{ 'selectedCuration_' + loop.index|string }}"
                                value="{{ 'input_radio_attribute_2_' + loop.index|string }}">
                     </div>
                 </div>
-                <input id="{{ 'input_radio_attribute_2_' + loop.index|string }}" type="text" class="form-control"
+                <input id="{{ 'input_radio_attribute_2_' + loop.index|string }}" type="text" class="form-control cursor-pointer"
                        aria-label="Text input with radio button"
                        value="{{ curation.attribute_2.name }}"
                        data-toggle="tooltip" data-placement="bottom"
@@ -92,7 +98,7 @@
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">
-                        <input id="{{ 'radio_attribute_3_' + loop.index|string }}" type="radio"
+                        <input id="{{ 'radio_attribute_3_' + loop.index|string }}" type="radio" class="cursor-pointer"
                                aria-label="Radio button for following text input"
                                name="{{ 'selectedCuration_' + loop.index|string }}"
                                value="{{ 'input_radio_attribute_3_' + loop.index|string }}">
@@ -100,30 +106,37 @@
                 </div>
                 <input id="{{ 'input_radio_attribute_3_' + loop.index|string }}" type="text" class="form-control"
                        aria-label="Text input with radio button"
-                       {% if curation.attribute_curated !=None %}
+                       {% if curation.status == 2 %}
                        value="{{ curation.attribute_curated }}"
                        {% endif %}
                 >
             </div>
         </div>
         <div id="{{ 'attribute_4_' + loop.index|string }}" class="attribute-container col-lg-2 badge">
-            <button id="{{ 'attr_input_4_' + loop.index|string }}" type="button" class="btn btn-outline-success"
-                    onclick="submit_curation_success('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', this.id, 'selectedCuration_' + '{{ loop.index|string }}', '{{ loop.index|string }}')">
-                <span class="glyphicon glyphicon-ok"></span> Curate
-            </button>
-            <button id="{{ 'attr_input_5_' + loop.index|string }}" type="button" class="btn btn-outline-danger"
-                    onclick="submit_curation_reject('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">
-                <span class="glyphicon glyphicon-remove"></span> Reject
-            </button>
-            <button id="{{ 'attr_input_6_' + loop.index|string }}" type="button" class="btn btn-outline-warning"
-                    onclick="submit_curation_ignore('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">
-                <span class="glyphicon glyphicon-remove"></span> Ignore
-            </button>
+            {% if curation.status > -1 %}
+                <button id="{{ 'attr_input_4_' + loop.index|string }}" type="button" class="btn btn-outline-success"
+                        onclick="submit_curation_success('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', this.id, 'selectedCuration_' + '{{ loop.index|string }}', '{{ loop.index|string }}')">
+                    <span class="glyphicon glyphicon-ok"></span> Curate
+                </button>
+                <button id="{{ 'attr_input_5_' + loop.index|string }}" type="button" class="btn btn-outline-danger"
+                        onclick="submit_curation_reject('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">
+                    <span class="glyphicon glyphicon-remove"></span> Reject
+                </button>
+            {% else %}
+                <button id="{{ 'attr_input_4_' + loop.index|string }}" type="button" class="btn btn-outline-dark"
+                        onclick="confirm_curation_success('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', this.id, 'selectedCuration_' + '{{ loop.index|string }}', '{{ loop.index|string }}')">
+                    <span class="glyphicon glyphicon-ok"></span> Curate
+                </button>
+                <button id="{{ 'attr_input_5_' + loop.index|string }}" type="button" class="btn btn-outline-dark"
+                        onclick="confirm_curation_reject('{{ curation.attribute_1.name }}', '{{ curation.attribute_2.name }}', '{{ loop.index|string }}')">
+                    <span class="glyphicon glyphicon-remove"></span> Reject
+                </button>
+            {% endif %}
         </div>
     </div>
 
     <script>
-        style_persisted_curation('{{ curation.type }}', '{{ loop.index|string }}', '{{ curation.attribute_curated }}')
+        style_persisted_curation('{{ curation.type }}', '{{ loop.index|string }}', '{{ curation.attribute_curated }}', '{{ curation.status }}')
     </script>
 
     {% endfor %}
@@ -190,7 +203,7 @@
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function () {
-                style_persisted_curation('SAME_AS', index, attribute_curated);
+                style_persisted_curation('SAME_AS', index, attribute_curated, 1);
             },
             error: function (request, status, error) {
                 alert("Something went wrong." + status + " " + error)
@@ -211,7 +224,7 @@
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function () {
-                style_persisted_curation('DIFFERENT_FROM', index, '');
+                style_persisted_curation('DIFFERENT_FROM', index, '', 1);
             },
             error: function (request, status, error) {
                 alert("Something went wrong." + status + " " + error)
@@ -219,30 +232,51 @@
         });
     }
 
-    function submit_curation_ignore(attribute_1, attribute_2, index) {
-        $.ajax({
-            url: "/curations",
-            type: "POST",
-            data: JSON.stringify({
-                attribute_1: {name: attribute_1},
-                attribute_2: {name: attribute_2},
-                attribute_curated: '',
-                type: 'IGNORES'
-            }),
-            contentType: "application/json; charset=utf-8",
-            dataType: "json",
-            success: function () {
-                style_persisted_curation('IGNORES', index, '');
-            },
-            error: function (request, status, error) {
-                alert("Something went wrong." + status + " " + error)
+    function confirm_curation_success(attribute_1, attribute_2, elementId, radioName, index) {
+        $("#dialog-confirm").html("One or more associated attributes already contain manual curations. " +
+            "If you press curate, previous curations could be lost. Do you want to proceed?");
+          $("#dialog-confirm").dialog({
+            resizable: false,
+            modal: true,
+            title: "Proceed with curation?",
+            height: 250,
+            width: 400,
+            buttons: {
+              "Yes, Curate": function() {
+                $(this).dialog('close');
+                submit_curation_success(attribute_1, attribute_2, elementId, radioName, index)
+              },
+              "Cancel": function() {
+                $(this).dialog('close');
+              }
             }
-        });
+          });
+    }
+
+    function confirm_curation_reject(attribute_1, attribute_2, index) {
+        $("#dialog-confirm").html("One or more associated attributes already contain manual curations. " +
+            "If you press reject, previous curations could be lost. Do you want to proceed?");
+          $("#dialog-confirm").dialog({
+            resizable: false,
+            modal: true,
+            title: "Proceed with Rejection?",
+            height: 250,
+            width: 400,
+            buttons: {
+              "Yes, Reject": function() {
+                $(this).dialog('close');
+                submit_curation_reject(attribute_1, attribute_2, index)
+              },
+              "Cancel": function() {
+                $(this).dialog('close');
+              }
+            }
+          });
     }
 
 
-    function style_persisted_curation(relationshipType, loopIndex, curatedAttribute) {
-        if ("SAME_AS" === relationshipType) {
+    function style_persisted_curation(relationshipType, loopIndex, curatedAttribute, status) {
+        if ("SAME_AS" === relationshipType && status > 0) {
             $('#input_radio_attribute_1_' + loopIndex).css({"background-color": ""});
             $('#input_radio_attribute_2_' + loopIndex).css({"background-color": ""});
             $('#input_radio_attribute_3_' + loopIndex).css({"background-color": ""});
