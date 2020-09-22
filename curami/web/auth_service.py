@@ -7,14 +7,13 @@ from curami.commons import neo4j_connector
 
 
 def authenticate_user(username, password):
-    user_node = neo4j_connector.get_user(username)
-    authenticated = False
+    neo4j_conn = neo4j_connector.Neo4jConnector()
+    password_in_db = neo4j_conn.get_user(username)
     token = None
-    if user_node is not None:
-        authenticated = check_password_hash(user_node['password'], password)
+    authenticated = check_password_hash(password_in_db, password)
 
     if authenticated:
-        token = random.getrandbits(128)
+        token = str(random.getrandbits(128))
         session[username] = token
         logging.info('New user logged in %s', username)
     else:
@@ -38,8 +37,9 @@ def logout(username):
 
 
 def create_user(username, password):
+    neo4j_conn = neo4j_connector.Neo4jConnector()
     password_hash = generate_password_hash(password)
-    neo4j_connector.create_user(username, password_hash)
+    neo4j_conn.create_user(username, password_hash)
 
 
 if __name__ == '__main__':

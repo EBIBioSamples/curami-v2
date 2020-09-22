@@ -1,9 +1,12 @@
 import json
 import os
 
-data_directory = "../../data/raw/"
-combined_data_directory = "../../data/combined/"
-data_sample_directory = "../../data/sample/"
+status_file = "../../data/status.json"
+data_directory = "../../data/raw/"  # todo remove
+combined_data_directory = "../../data/combined/"  # todo remove
+data_sample_directory = "../../data/sample/"  # todo remove
+raw_sample_directory = "../../data/samples/"
+raw_sample_directory_temp = "../../data/samples/temp/"
 intermediate_data_directory = "../../data/intermediate/"
 results_directory = "../../data/results/"
 intermediate_simple_directory = intermediate_data_directory + "simple/"
@@ -18,10 +21,10 @@ attribute_values_file = intermediate_data_directory + "attribute_values.json"
 summary_file = intermediate_data_directory + "summary.txt"
 coexistence_file = intermediate_data_directory + "coexistence.csv"
 
-unique_attributes_file_final = intermediate_clean_directory + "unique_attributes.csv"
-unique_attributes_file_final_diff = intermediate_clean_directory + "unique_attributes_diff.csv"
-unique_attributes_file_final_diff_all = intermediate_clean_directory + "unique_attributes_diff_all.csv"
-coexistence_file_final = intermediate_clean_directory + "coexistence.csv"
+unique_attributes_file_final_diff = results_directory + "unique_attributes_diff.csv"
+unique_attributes_file_final_diff_all = results_directory + "unique_attributes_diff_all.csv"
+unique_attributes_file_final = results_directory + "unique_attributes.csv"
+coexistence_file_final = results_directory + "coexistence.csv"
 
 matched_attributes_file = intermediate_data_directory + "matched_attributes.csv"
 matched_synonym_attributes_file = intermediate_data_directory + "matched_synonym_attributes.csv"
@@ -41,6 +44,12 @@ encoding = "utf-8"
 def create_data_directory():
     if not os.path.exists(data_directory):
         os.makedirs(data_directory)
+
+    if not os.path.exists(raw_sample_directory):
+        os.makedirs(raw_sample_directory)
+
+    if not os.path.exists(raw_sample_directory_temp):
+        os.makedirs(raw_sample_directory_temp)
 
     if not os.path.exists(combined_data_directory):
         os.makedirs(combined_data_directory)
@@ -63,7 +72,7 @@ def create_data_directory():
 
 
 def read_from_file(file_no):
-    with open(data_directory + str(file_no) + data_extension, "r") as data_file:
+    with open(raw_sample_directory + str(file_no) + data_extension, "r") as data_file:
         # input_string = input.read()
         sample_list = json.load(data_file)
     return sample_list
@@ -81,7 +90,7 @@ def get_all_attributes(from_file_no, to_file_no):
     attribute_list = []
     sample_list = []
     for i in range(from_file_no, to_file_no):
-        with open(combined_data_directory + str(i) + data_extension, "r") as data_file:
+        with open(raw_sample_directory + str(i) + data_extension, "r") as data_file:
             sample_list = sample_list + json.load(data_file)
 
     for sample in sample_list:
@@ -98,7 +107,7 @@ def get_all_values(from_file_no, to_file_no):
     value_list = []
     sample_list = []
     for i in range(from_file_no, to_file_no):
-        with open(combined_data_directory + str(i) + data_extension, "r") as data_file:
+        with open(raw_sample_directory + str(i) + data_extension, "r") as data_file:
             sample_list = sample_list + json.load(data_file)
 
     for sample in sample_list:
@@ -119,7 +128,7 @@ def get_key_value_as_features(from_file_no, to_file_no):
     value_list = []
     sample_list = []
     for i in range(from_file_no, to_file_no):
-        with open(combined_data_directory + str(i) + data_extension, "r") as data_file:
+        with open(raw_sample_directory + str(i) + data_extension, "r") as data_file:
             sample_list = sample_list + json.load(data_file)
 
     for sample in sample_list:
@@ -137,7 +146,7 @@ def get_key_value_as_features(from_file_no, to_file_no):
 
 
 def get_key_value_as_features1():
-    with open(data_directory + str(1) + data_extension, "r") as data_file:
+    with open(raw_sample_directory + str(1) + data_extension, "r") as data_file:
         sample_list = json.load(data_file)
 
     for sample in sample_list:

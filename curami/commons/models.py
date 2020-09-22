@@ -59,3 +59,4 @@ class Curation:
         self.description = None
         self.confidence = None
         self.owner = None
+        self.status = 0

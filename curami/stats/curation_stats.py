@@ -15,7 +15,8 @@ class CurationStatCollector:
         processed = 0
         curation_domain_count = {}
         curami_attribute_count = {}
-        accession_set = set()
+        curami_accession_set = set()
+        zooma_accession_set = set()
         for curation in self.mongo_connector.get_curation_records():
             processed += 1
             domain = curation['domain']
@@ -24,8 +25,11 @@ class CurationStatCollector:
             else:
                 curation_domain_count[domain] = 1
 
+            if domain == 'self.BiosampleZooma':
+                zooma_accession_set.add(curation['sample'])
+
             if domain == 'self.BiosampleCurami':
-                accession_set.add(curation['sample'])
+                curami_accession_set.add(curation['sample'])
                 attribute_pre = curation['curation']['attributesPre'][0]['type']
                 attribute_post = curation['curation']['attributesPost'][0]['type']
                 key = attribute_pre + ':::' + attribute_post
@@ -46,7 +50,8 @@ class CurationStatCollector:
         curami_pd.to_csv("../../data/results/curation_stats_curami_curation_links.csv", index=False)
         with open("../../data/results/curation_stats_domain_count.json", "w") as out:
             out.write(json.dumps({'total_curations': processed,
-                                  'curami_affected_samples': len(accession_set),
+                                  'curami_affected_samples': len(curami_accession_set),
+                                  'zooma_affected_samples': len(zooma_accession_set),
                                   'curation_domains': curation_domain_count}))
 
     @staticmethod

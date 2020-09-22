@@ -116,7 +116,7 @@ def extract_sample_dataset(sample_size, from_file_no, to_file_no):
     data_list = []
     file_count = 0
     for i in tqdm(range(from_file_no, to_file_no + 1)):
-        with open(file_utils.combined_data_directory + str(i) + file_utils.data_extension, "r") as data_file:
+        with open(file_utils.raw_sample_directory + str(i) + file_utils.data_extension, "r") as data_file:
             sample_list = json.load(data_file)
             random_indices = random.sample(range(1, 99999), sample_per_file)
             random_sample_of_sample_list = [sample_list[i] for i in random_indices]
@@ -131,7 +131,7 @@ def extract_sample_dataset(sample_size, from_file_no, to_file_no):
 
 
 def write_to_file(data_list, file_name):
-    with open(file_utils.data_sample_directory + str(file_name) + file_utils.data_extension, "w") as output:
+    with open(file_utils.raw_sample_directory + str(file_name) + file_utils.data_extension, "w") as output:
         output.write(json.dumps(data_list, indent=4))
 
 

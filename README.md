@@ -7,6 +7,16 @@ In first version we are only interested of simple lexical correction of attribut
 Here we focus on the characteristics section of the sample data.  
 As a first step, we will ignore the IRI of attributes.  
 
+### How to run
+1. Run `collection/biosamples_crawler.py` to download all the samples to your local disk
+2. Run `preprocess/transform.py` to generate downstream files. This generates unique_attributes, unique_values, etc.. files
+3. Run `preprocess/clean.py` to normalise attributes and recalculate coexistence values.
+4. Run `analyse/pair_matching_edit_distance.py` generate syntactically similar pairs based on edit distance
+5. Run `analyse/pair_matching_dictionary.py` filter out pairs that have one dictionary matched attribute
+6. Run `analyse/pair_matching_word_base.py` generate syntactically similar pairs based on word base format
+7. Run `analyse/pair_matching_values.py` generate similar pairs based on values
+8. Run `analyse/pair_matching_synonym.py` generate semantically similar pairs based on synonyms
+
 ### Collection
 Similar to previous version, we start by collecting data. When we collect data from wwwdev environment its quite slow. 
 If we try to increase the number of threads, server simply gives up responding. 
