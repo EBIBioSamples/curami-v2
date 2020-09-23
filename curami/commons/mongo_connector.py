@@ -2,7 +2,7 @@ from enum import Enum
 
 from pymongo import MongoClient
 
-from config_params import DB_URL, DB_USERNAME, DB_PASSWORD
+from curami.commons.config_params import DB_URL, DB_USERNAME, DB_PASSWORD
 
 
 class MongoCollections(Enum):

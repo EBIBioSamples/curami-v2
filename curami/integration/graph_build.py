@@ -2,7 +2,7 @@ import pandas as pd
 import file_utils
 
 from neo4j import GraphDatabase
-from config_params import NEO4J_URL, NEO4J_USERNAME, NEO4J_PASSWORD
+from curami.commons.config_params import NEO4J_URL, NEO4J_USERNAME, NEO4J_PASSWORD
 
 
 class GraphBuilder(object):

@@ -173,8 +173,9 @@ def generate_all_data_file(from_file_no, to_file_no):
 
 def main(*args):
     # extract_sample_dataset(500000, 0, 99)
-    generate_all_data_file(0, 4)
-    # cluster()
+    # generate_all_data_file(0, 4)
+    # draw_summary()
+    cluster()
 
 
 if __name__ == "__main__":

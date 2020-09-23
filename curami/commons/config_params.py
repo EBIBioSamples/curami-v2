@@ -1,6 +1,6 @@
 from decouple import config
 
-BIOSAMPLES_URL = config("BIOSAMPLES_URL", default="http://wwwdev.ebi.ac.uk")
+BIOSAMPLES_URL = config("BIOSAMPLES_URL", default="http://wwwdev.ebi.ac.uk/biosamples/")
 AAP_URL = config("AAP_URL", default="https://explore.api.aai.ebi.ac.uk/auth")
 AAP_USERNAME = config("AAP_USERNAME")
 AAP_PASSWORD = config("AAP_PASSWORD")

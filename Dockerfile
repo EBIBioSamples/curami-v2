@@ -12,6 +12,7 @@ MAINTAINER EBI BioSamples <biosamples@ebi.ac.uk>
 
 
 COPY . /app
+COPY .env.docker /app/.env
 WORKDIR /app
 #RUN virtualenv venv
 #RUN python3 -m venv ./venv

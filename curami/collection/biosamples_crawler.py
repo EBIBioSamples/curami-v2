@@ -4,6 +4,7 @@ import time
 import requests
 
 from curami.commons import utils, file_utils
+from curami.commons.config_params import BIOSAMPLES_URL
 
 """Crawl biosamples public api to get all samples and save them in filesystem. Uses single thread and cursor to avoid 
 server timeout errors in multi-threaded paged method. Therefore could run for a long time. See :module:`crawl.py` 
@@ -11,7 +12,7 @@ for multi-threaded crawler"""
 
 
 def main():
-    biosamples_url = 'https://www.ebi.ac.uk/biosamples/samples'
+    biosamples_url = BIOSAMPLES_URL + 'samples'
     page_size = 100
 
     start = time.time()

@@ -1,6 +1,8 @@
+import json
+
 import numpy as np
 import pandas as pd
-import json
+
 from curami.commons import file_utils
 
 
@@ -39,8 +41,8 @@ def calculate_coexistence_probability():
     merge_df["PHI_COEFFICIENT"] = (summary["total samples"] * merge_df["COEXISTENCE_COUNT"] -
                                    merge_df["ATTRIBUTE_1_COUNT"] * merge_df["ATTRIBUTE_2_COUNT"]) / \
                                   np.sqrt((merge_df["ATTRIBUTE_1_COUNT"] * merge_df["ATTRIBUTE_2_COUNT"] *
-                                             (summary["total samples"] - merge_df["ATTRIBUTE_2_COUNT"]) *
-                                             (summary["total samples"] - merge_df["ATTRIBUTE_2_COUNT"])))
+                                           (summary["total samples"] - merge_df["ATTRIBUTE_2_COUNT"]) *
+                                           (summary["total samples"] - merge_df["ATTRIBUTE_2_COUNT"])))
 
     merge_df["DIFF_COEXISTENCE_ABS"] = abs(merge_df["DIFF_COEXISTENCE"])
 

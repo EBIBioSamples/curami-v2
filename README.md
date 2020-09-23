@@ -8,14 +8,38 @@ Here we focus on the characteristics section of the sample data.
 As a first step, we will ignore the IRI of attributes.  
 
 ### How to run
+0. create `.env` file in root directory and copy content of `.env.docker` into `.env` file
 1. Run `collection/biosamples_crawler.py` to download all the samples to your local disk
 2. Run `preprocess/transform.py` to generate downstream files. This generates unique_attributes, unique_values, etc.. files
 3. Run `preprocess/clean.py` to normalise attributes and recalculate coexistence values.
-4. Run `analyse/pair_matching_edit_distance.py` generate syntactically similar pairs based on edit distance
-5. Run `analyse/pair_matching_dictionary.py` filter out pairs that have one dictionary matched attribute
-6. Run `analyse/pair_matching_word_base.py` generate syntactically similar pairs based on word base format
-7. Run `analyse/pair_matching_values.py` generate similar pairs based on values
-8. Run `analyse/pair_matching_synonym.py` generate semantically similar pairs based on synonyms
+4. Run `analysis/summary.py` to visualise attribute counts
+4. Run `analysis/pair_matching_edit_distance.py` generate syntactically similar pairs based on edit distance
+5. Run `analysis/pair_matching_dictionary.py` filter out pairs that have one dictionary matched attribute
+6. Run `analysis/pair_matching_word_base.py` generate syntactically similar pairs based on word base format
+7. Run `analysis/pair_matching_values.py` generate similar pairs based on values
+8. Run `analysis/pair_matching_synonym.py` generate semantically similar pairs based on synonyms
+
+#### Generating attribute coexistence probabilities
+12. Run `analysis/attribute_coexistence.py` to calculate coexistence probabilities for attributes
+13. Run `integration/graph_builder.py build_gephi_coexistence_graph()` to generate Gephi input file.
+14. Use generated file to analyse attribute connections in [Gephi](https://gephi.org/)
+
+#### Sample Clustering
+12. Run `preprocess/generate_features.py` to generate feature file for clustering
+12. Run `analysis/cluster.py` to visualise clusters
+
+#### Running web application in docker
+1. Make sure you have .env file with similar configuration in root directory
+`
+BIOSAMPLES_URL=https://www.ebi.ac.uk/biosamples/
+NEO4J_URL=bolt://neo4j:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=neo5j
+`
+2. Run `run_docker_compose.sh`. This will spin-up Neo4j and Flask webapp.
+3. Load data into Neo4j by running `analysis/graph_build.py build_neo4j_curation_graph()`
+4. Create a user in Neo4j by running `web/auth_service.py`
+5. Go to localhost:5000 in browser and log in using created user and password
 
 ### Collection
 Similar to previous version, we start by collecting data. When we collect data from wwwdev environment its quite slow. 

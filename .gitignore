@@ -5,5 +5,9 @@ venv/
 **/__pycache__/*
 **/curami.egg-info/*
 *dist/*
-generate_curation_rules.py
-.env*
+.env
+.env.local
+.env.wwwdev
+.env.prod
+curami/analysis/pair_matcher.py
+curami/analysis/temp-plot.html

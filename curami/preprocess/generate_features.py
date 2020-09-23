@@ -59,5 +59,5 @@ def generate_feature_files_from_values(from_file_no, to_file_no):
             pd_data_list.to_csv(output, index=False, float_format='%.0f')
 
 
-# generate_features_file(1, 1)
-generate_feature_files_from_values(1, 1)
+generate_features_file(1, 1)
+# generate_feature_files_from_values(1, 1)

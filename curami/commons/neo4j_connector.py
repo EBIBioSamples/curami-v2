@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from curami.commons import common_utils, file_utils
 from curami.commons.models import Curation, RelationshipType
-from config_params import NEO4J_URL, NEO4J_USERNAME, NEO4J_PASSWORD
+from curami.commons.config_params import NEO4J_URL, NEO4J_USERNAME, NEO4J_PASSWORD
 
 # db_url = 'bolt://neo4j:7687'
 db_url = "bolt://localhost:7687"
@@ -228,6 +228,35 @@ class Neo4jConnector:
                     "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute AND b.name = $curation " +
                     "CREATE (a)-[r:LOOKS_SIMILAR {class: 'MACHINE', owner: 'dictionary', score: $score}]->(b)",
                     attribute=attribute_name, curation=curation_name, score=0.2)
+
+                progress_bar.update(1)
+
+        print("Finished loading data into neo4j")
+
+    def build_cooccurance_graph(self, filename, delete):
+        coexistence_df = pd.read_csv(filename, encoding=file_utils.encoding)
+        print("Loading " + str(len(coexistence_df)) + " Links from coexistence file")
+        attribute_map = common_utils.build_attribute_map()
+        if delete:
+            with self.driver.session() as session:
+                session.run("MATCH (n) DETACH DELETE n")
+
+        with self.driver.session() as session:
+            progress_bar = tqdm(total=len(coexistence_df), position=0, leave=True)
+            for index, row in tqdm(coexistence_df.iterrows()):
+                attribute1 = row["ATTRIBUTE_1"]
+                attribute2 = row["ATTRIBUTE_2"]
+                correlation = row["COUNT"]
+                session.run("MERGE (a:Attribute {name: $attribute}) " +
+                            "ON CREATE SET count: $count, quality: $quality",
+                            attribute=attribute1, count=attribute_map[attribute1], quality=0)
+                session.run("MERGE (a:Attribute {name: $attribute}) " +
+                            "ON CREATE SET count: $count, quality: $quality",
+                            attribute=attribute2, count=attribute_map[attribute2], quality=0)
+                session.run(
+                    "MATCH (a:Attribute),(b:Attribute) WHERE a.name = $attribute1 AND b.name = $attribute2 " +
+                    "CREATE (a)-[r:COOCCURS_WITH {class: 'MACHINE', owner: 'correlate', correlation: $correlation}]->(b)",
+                    attribute1=attribute1, attribute2=attribute2, correlation=correlation)
 
                 progress_bar.update(1)
 
