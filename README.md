@@ -1,13 +1,19 @@
 curami-v2
 =========
-Attempt to curate BioSamples objects.
+A semi-automated curation tool to identify and harmonise erroneous attributes in the BioSamples database.
 
-In first version we are only interested of simple lexical correction of attributes. 
+## Requirements
+- Python 3
+- Neo4j 4
 
-Here we focus on the characteristics section of the sample data.  
-As a first step, we will ignore the IRI of attributes.  
 
-### How to run
+## Installation
+```bash
+python3 -m venv env
+pip3 install -r requirements.txt
+```
+
+## Quickstart: How to run
 0. create `.env` file in root directory and copy content of `.env.docker` into `.env` file
 1. Run `collection/biosamples_crawler.py` to download all the samples to your local disk
 2. Run `preprocess/transform.py` to generate downstream files. This generates unique_attributes, unique_values, etc.. files
@@ -29,13 +35,6 @@ As a first step, we will ignore the IRI of attributes.
 12. Run `analysis/cluster.py` to visualise clusters
 
 #### Running web application in docker
-1. Make sure you have .env file with similar configuration in root directory
-`
-BIOSAMPLES_URL=https://www.ebi.ac.uk/biosamples/
-NEO4J_URL=bolt://neo4j:7687
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=neo5j
-`
 2. Run `run_docker_compose.sh`. This will spin-up Neo4j and Flask webapp.
 3. Load data into Neo4j by running `analysis/graph_build.py build_neo4j_curation_graph()`
 4. Create a user in Neo4j by running `web/auth_service.py`
@@ -156,3 +155,10 @@ source venv/bin/activate
 pip3 freeze > requirements.txt
 pip3 install -r requirements.txt
 python3 setup.py sdist
+
+
+## Contributors
+
+
+## License
+[Apache 2.0](https://choosealicense.com/licenses/apache-2.0/)
