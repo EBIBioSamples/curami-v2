@@ -31,7 +31,7 @@ plotly==4.0.0
 prince==0.6.3
 prompt-toolkit==2.0.9
 py2neo==4.3.0
-Pygments==2.3.1
+Pygments==2.7.4
 pymongo==3.8.0
 pyparsing==2.3.1
 pyrsistent==0.15.2
