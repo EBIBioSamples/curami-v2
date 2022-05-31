@@ -3,7 +3,7 @@ curami-v2
 A semi-automated curation tool to identify and harmonise erroneous attributes in the BioSamples database.
 
 ## Requirements
-- Python 3
+- Python 3.6 (need exact version, otherwise dependencies go crazy)
 - Neo4j 4
 
 

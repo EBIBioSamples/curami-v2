@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 
-import file_utils
+from curami.commons import file_utils
 from curami.commons import neo4j_connector
 
 
@@ -48,7 +48,8 @@ def build_gephi_coexistence_graph():
 
 
 def main(*args):
-    build_neo4j_curation_graph()
+    # build_neo4j_curation_graph()
+    build_gephi_coexistence_graph()
 
 
 if __name__ == "__main__":

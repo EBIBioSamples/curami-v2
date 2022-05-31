@@ -1,6 +1,6 @@
 import pandas as pd
 
-import spell
+from curami.commons import spell
 from curami.commons import file_utils
 
 '''

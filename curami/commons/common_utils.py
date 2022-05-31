@@ -1,6 +1,12 @@
 import pandas as pd
+import logging
 
 from curami.commons import file_utils
+
+
+def config_logger(handle: str) -> logging.Logger:
+    logging.basicConfig(level=logging.INFO)
+    return logging.getLogger(handle)
 
 
 def build_attribute_map():

@@ -4,6 +4,7 @@ from multiprocessing import pool
 import pandas as pd
 from nltk.corpus import wordnet
 from tqdm import tqdm
+import nltk
 
 from curami.commons import file_utils
 
@@ -88,8 +89,9 @@ def compare(synsets_list):
 
 
 if __name__ == "__main__":
-    # analyze()
-    ss = wordnet.synsets(str('human'))
-    print(ss)
-    ss = wordnet.synsets(str('host'))
-    print(ss)
+    nltk.download('wordnet')
+    analyze()
+    # ss = wordnet.synsets(str('human'))
+    # print(ss)
+    # ss = wordnet.synsets(str('host'))
+    # print(ss)

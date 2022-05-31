@@ -3,13 +3,14 @@ import json
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import file_utils
+from curami.commons import file_utils
 from curami.commons.mongo_connector import MongoConnector
 
 
 class CurationStatCollector:
     def __init__(self):
         self.mongo_connector = MongoConnector()
+        print("Got mongo connection")
 
     def get_curation_stats(self):
         processed = 0
@@ -44,7 +45,11 @@ class CurationStatCollector:
 
             if processed % 10000 == 0:
                 print("Processed count: [%d]\r" % processed, end='')
+                print("Processing --> total: " + str(processed) + ", curami: " + str(len(curami_accession_set))
+                      + ", zooma: " + str(len(zooma_accession_set)) + ", domains: " + str(curation_domain_count))
 
+        print("The end --> total: " + str(processed) + ", curami: " + str(len(curami_accession_set))
+              + ", zooma: " + str(len(zooma_accession_set)) + ", domains: " + str(curation_domain_count))
         curami_pd = pd.DataFrame(curami_attribute_count.values())
         curami_pd.sort_values(by=['count'], inplace=True, ascending=False)
         curami_pd.to_csv("../../data/results/curation_stats_curami_curation_links.csv", index=False)

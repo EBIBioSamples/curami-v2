@@ -1,15 +1,21 @@
 import json
 import logging
+import pathlib
 
 from curami.commons import file_utils
 
 # this module will breakdown the large json file taken from biosamples export pipeline
-export_file_path = "~/export.20190608T230001Z.json"
+export_file_path = "/data/temp/export.json"
 chunk_size = 100000
 
 
 def main():
+    create_dirs()
     breakdown_to_smaller_chunks()
+
+
+def create_dirs():
+    pathlib.Path(file_utils.raw_sample_directory).mkdir(parents=True, exist_ok=True)
 
 
 def breakdown_to_smaller_chunks():

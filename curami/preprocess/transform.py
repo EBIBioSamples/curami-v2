@@ -1,3 +1,4 @@
+import gc
 import json
 import logging
 
@@ -5,7 +6,10 @@ import pandas as pd
 from tqdm import tqdm
 
 from curami.commons import file_utils
+from curami.commons import common_utils
 from curami.commons import set_encoder
+
+logger = common_utils.config_logger("CURAMI_TRANSFORM")
 
 ''' Transform collected data
 transform data into formats that are easier to analyze.
@@ -19,20 +23,20 @@ This process generate following files
 
 
 def preprocess():
-    logging.info("Transforming data")
+    logger.info("Transforming data")
     from_file_no = 0
-    to_file_no = 106  # inclusive
-    generate_attribute_value_files(from_file_no, to_file_no)  # unique attributes, unique values, attribute-values files
+    to_file_no = 191  # inclusive
+    generate_attribute_value_files(from_file_no, to_file_no)  # unique attributes, unique values,
+    generate_attribute_to_value_file(from_file_no, to_file_no)  # attribute-value: Separate function to manage memory
     generate_coexistence_file(from_file_no, to_file_no)
     # generate_all_data_file(from_file_no, to_file_no)  # this file is too big, difficult to process
-    logging.info("Finished generating all the files")
+    logger.info("Finished generating all the files")
 
 
 def generate_attribute_value_files(from_file_no, to_file_no):
-    logging.info("Generating attribute, value files")
+    logger.info("Generating attribute, value files")
     unique_attributes = {}
     unique_values = {}
-    attribute_values_map = {}
     total_samples = 0
 
     for i in tqdm(range(from_file_no, to_file_no + 1)):
@@ -55,36 +59,58 @@ def generate_attribute_value_files(from_file_no, to_file_no):
                 else:
                     unique_values[value] = 1
 
+    total_attribute_value_count = sum(unique_attributes.values())
+    total_attribute_count = len(unique_attributes)
+    total_value_count = len(unique_values)
+
+    logger.info("Writing attribute, value files in %s", file_utils.intermediate_data_directory)
+    pd_unique_attributes = pd.DataFrame(
+        list(sorted(unique_attributes.items(), key=lambda kv: kv[1], reverse=True)), columns=["ATTRIBUTE", "COUNT"])
+    del unique_attributes
+    gc.collect()
+    pd_unique_attributes.to_csv(file_utils.unique_attributes_file, index=False, encoding="utf-8")
+
+    pd_unique_values = pd.DataFrame(
+        list(sorted(unique_values.items(), key=lambda kv: kv[1], reverse=True)), columns=["VALUE", "COUNT"])
+    del unique_values
+    gc.collect()
+    pd_unique_values.to_csv(file_utils.unique_values_file, index=False, encoding="utf-8")
+
+    # generate summary and write to file
+    logger.info("Writing summary to file")
+    summary = dict()
+    summary["total samples"] = total_samples
+    summary["total attributes-value count"] = total_attribute_value_count
+    summary["unique attribute count"] = total_attribute_count
+    summary["unique value count"] = total_value_count
+    with open(file_utils.summary_file, "w") as output:
+        output.write(json.dumps(summary, indent=4))
+
+
+def generate_attribute_to_value_file(from_file_no, to_file_no):
+    logger.info("Generating attribute to value file")
+    attribute_values_map = {}
+
+    for i in tqdm(range(from_file_no, to_file_no + 1)):
+        with open(file_utils.raw_sample_directory + str(i) + file_utils.data_extension, "r") as data_file:
+            sample_list = json.load(data_file)
+
+        for sample in sample_list:
+            attribute_values = sample["characteristics"]
+            for key, value_as_list in attribute_values.items():
+                value = value_as_list[0]["text"]
                 if key in attribute_values_map:
                     attribute_values_map[key].add(value)
                 else:
                     attribute_values_map[key] = {value}
 
-    logging.info("Writing attribute, value files in %s", file_utils.intermediate_data_directory)
-    pd_unique_attributes = pd.DataFrame(
-        list(sorted(unique_attributes.items(), key=lambda kv: kv[1], reverse=True)), columns=["ATTRIBUTE", "COUNT"])
-    pd_unique_attributes.to_csv(file_utils.unique_attributes_file, index=False, encoding="utf-8")
-
-    pd_unique_values = pd.DataFrame(
-        list(sorted(unique_values.items(), key=lambda kv: kv[1], reverse=True)), columns=["VALUE", "COUNT"])
-    pd_unique_values.to_csv(file_utils.unique_values_file, index=False, encoding="utf-8")
-
+    logger.info("Writing attribute, value files in %s", file_utils.intermediate_data_directory)
     with open(file_utils.attribute_values_file, "w") as output:
         output.write(json.dumps(attribute_values_map, indent=4, cls=set_encoder.SetEncoder))
 
-    # generate summary and write to file
-    logging.info("Writing summary to file")
-    summary = dict()
-    summary["total samples"] = total_samples
-    summary["total attributes-value count"] = sum(unique_attributes.values())
-    summary["unique attribute count"] = len(unique_attributes)
-    summary["unique value count"] = len(unique_values)
-    with open(file_utils.summary_file, "w") as output:
-        output.write(json.dumps(summary, indent=4))
-
 
 def generate_coexistence_file(from_file_no, to_file_no):
-    logging.info("Generating coexistence file")
+    logger.info("Generating coexistence file")
 
     coexistence_map = {}
 
@@ -113,7 +139,7 @@ def generate_coexistence_file(from_file_no, to_file_no):
 
                     coexistence_map[combined_key]["COUNT"] = coexistence_map[combined_key]["COUNT"] + 1
 
-    logging.info("Writing coexistence file in %s", file_utils.intermediate_data_directory)
+    logger.info("Writing coexistence file in %s", file_utils.intermediate_data_directory)
     pd_unique_attributes = pd.DataFrame(
         list(sorted(coexistence_map.values(), key=lambda kv: kv["COUNT"], reverse=True)),
         columns=["ATTRIBUTE_1", "ATTRIBUTE_2", "COUNT"])

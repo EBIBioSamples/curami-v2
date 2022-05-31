@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 
 status_file = "../../data/status.json"
 data_directory = "../../data/raw/"  # todo remove
@@ -60,9 +61,8 @@ def create_data_directory():
     if not os.path.exists(intermediate_simple_directory):
         os.makedirs(intermediate_simple_directory)
 
-    if not os.path.exists(intermediate_underscore_directory):
-        os.makedirs(intermediate_underscore_directory)
-        os.makedirs(intermediate_simple_directory)
+    pathlib.Path(intermediate_underscore_directory).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(intermediate_simple_directory).mkdir(parents=True, exist_ok=True)
 
     if not os.path.exists(intermediate_clean_directory):
         os.makedirs(intermediate_clean_directory)

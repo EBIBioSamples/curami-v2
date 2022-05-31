@@ -123,8 +123,15 @@ def plot_attribute_count_bar():
     pd_unique_attributes = pd.read_csv(file_utils.unique_attributes_file, encoding="utf-8")
     pd_unique_attributes_clean = pd.read_csv(file_utils.unique_attributes_file_final, encoding="utf-8")
 
+    # filter out NCBI... attributes that are not very useful
+    df = pd_unique_attributes_clean.head(150)
+    df = df.loc[~df['ATTRIBUTE'].str.startswith('NCBI')
+                & ~df['ATTRIBUTE'].str.startswith('INSDC')
+                & ~df['ATTRIBUTE'].str.startswith('SRA')
+                & ~df['ATTRIBUTE'].str.startswith('ENA')].copy()
+
     plt.figure(figsize=(18, 10))
-    b = sns.barplot(pd_unique_attributes_clean["ATTRIBUTE"][0:100], pd_unique_attributes_clean["COUNT"][0:100]/1000000)
+    b = sns.barplot(df["ATTRIBUTE"][0:100], df["COUNT"][0:100]/1000000)
     b.axes.set_title("Attribute Count", fontsize=30)
     b.set_xlabel("Attribute (first 100)", fontsize=18)
     b.set_ylabel("Count in  millions", fontsize=18)

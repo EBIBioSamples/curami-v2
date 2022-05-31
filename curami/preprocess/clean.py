@@ -1,3 +1,4 @@
+import nltk
 import pandas as pd
 
 from curami.commons import file_utils
@@ -286,4 +287,5 @@ def recalculate_coexistence_matrix():
 
 
 if __name__ == "__main__":
+    nltk.download('words')
     preprocess()
