@@ -25,7 +25,7 @@ neobolt==1.7.17
 neotime==1.7.4
 networkx==2.3
 nltk==3.4
-numpy==1.16.1
+numpy==1.22.0
 pandas==0.24.0
 plotly==4.0.0
 prince==0.6.3
